@@ -1,0 +1,329 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============ Theme tokens ============ */
+:root,
+[data-theme="dark"] {
+  --bg: #0b1512;
+  --panel: #122019;
+  --card: #182a21;
+  --well: #081009;
+  --ink: #efead8;
+  --muted: #8fa093;
+  --hairline: #25382e;
+  color-scheme: dark;
+}
+
+/* Daylight Sanctum — light variant of every token */
+[data-theme="light"] {
+  --bg: #f4efe1;
+  --panel: #ece5d3;
+  --card: #f8f4e8;
+  --well: #e4dcc6;
+  --ink: #14251d;
+  --muted: #5c6b5f;
+  --hairline: #cdbf9c;
+  color-scheme: light;
+}
+
+* {
+  border-color: var(--hairline);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--ink);
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Parchment-grain texture band */
+.grain {
+  background-image: radial-gradient(
+    rgba(239, 234, 216, 0.025) 1px,
+    transparent 1px
+  );
+  background-size: 3px 3px;
+}
+
+/* Arcane sigil watermark behind section headings */
+.sigil::before {
+  content: "";
+  position: absolute;
+  inset: -20% -10% auto auto;
+  width: 220px;
+  height: 220px;
+  background: radial-gradient(
+    circle,
+    rgba(232, 180, 74, 0.06) 0%,
+    transparent 60%
+  );
+  pointer-events: none;
+}
+
+/* Engraved micro-labels */
+.engraved {
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+}
+
+/* Ornamental gold filigree divider */
+.filigree-divider {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(232, 180, 74, 0.45) 20%,
+    rgba(232, 180, 74, 0.45) 80%,
+    transparent
+  );
+}
+
+/* Gold light-sweep across Immortal / Arcana cards */
+.sweep-mask {
+  position: relative;
+  overflow: hidden;
+}
+.sweep-mask::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    115deg,
+    transparent 30%,
+    rgba(232, 180, 74, 0.18) 48%,
+    rgba(239, 234, 216, 0.28) 50%,
+    rgba(232, 180, 74, 0.18) 52%,
+    transparent 70%
+  );
+  transform: translateX(-120%);
+  pointer-events: none;
+}
+.group:hover .sweep-mask::after,
+.sweep-always::after {
+  animation: sweep 2.6s ease-in-out infinite;
+}
+
+/* Ornamental corner brackets */
+.corner-brackets {
+  position: relative;
+}
+.corner-brackets::before,
+.corner-brackets::after {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border: 1px solid rgba(232, 180, 74, 0.5);
+  pointer-events: none;
+}
+.corner-brackets::before {
+  top: 8px;
+  left: 8px;
+  border-right: 0;
+  border-bottom: 0;
+}
+.corner-brackets::after {
+  bottom: 8px;
+  right: 8px;
+  border-left: 0;
+  border-top: 0;
+}
+
+/* Skeleton shimmer */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--card) 25%,
+    rgba(239, 234, 216, 0.06) 37%,
+    var(--card) 63%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.8s linear infinite;
+}
+
+/* Focus-visible gold ring — WCAG AA */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid #e8b44a;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--well);
+}
+::-webkit-scrollbar-thumb {
+  background: #2a3d31;
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #375040;
+}
+
+/* ============ Motion & interactive helpers ============ */
+
+/* Scroll-reveal: hidden until .in-view is toggled by IntersectionObserver */
+.reveal {
+  opacity: 0;
+  transform: translateY(22px);
+  transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: opacity, transform;
+}
+.reveal.in-view {
+  opacity: 1;
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Edge-faded marquee track */
+.marquee-mask {
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 8%,
+    #000 92%,
+    transparent
+  );
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 8%,
+    #000 92%,
+    transparent
+  );
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 40s linear infinite;
+}
+.marquee-track:hover {
+  animation-play-state: paused;
+}
+
+/* Animated gold gradient text */
+.text-shimmer {
+  background: linear-gradient(
+    90deg,
+    #e8b44a 0%,
+    #f6e3a8 25%,
+    #e8b44a 50%,
+    #c68a2e 75%,
+    #e8b44a 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer 5s linear infinite;
+}
+
+/* Conic aura ring that spins behind a framed element */
+.aura::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba(232, 180, 74, 0.55) 90deg,
+    transparent 200deg,
+    rgba(47, 169, 140, 0.45) 300deg,
+    transparent 360deg
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: spin-slow 14s linear infinite;
+  pointer-events: none;
+}
+
+/* Lift + glow on hover for interactive cards */
+.hover-lift {
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.35s ease, border-color 0.35s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 40px -18px rgba(0, 0, 0, 0.7),
+    0 0 28px -10px rgba(232, 180, 74, 0.4);
+  border-color: rgba(232, 180, 74, 0.4);
+}
+
+/* Underline that wipes in on hover */
+.link-underline {
+  position: relative;
+}
+.link-underline::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  height: 1px;
+  width: 100%;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
+}
+.link-underline:hover::after {
+  transform: scaleX(1);
+}
+
+@layer components {
+  .btn-gold {
+    @apply inline-flex items-center justify-center gap-2 rounded-md bg-gold px-5 py-2.5 font-semibold text-abyss transition-all hover:bg-[#f0c35f] hover:shadow-glow active:translate-y-px disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:shadow-none;
+  }
+  .btn-teal {
+    @apply inline-flex items-center justify-center gap-2 rounded-md border border-teal/40 bg-teal/10 px-5 py-2.5 font-semibold text-teal transition-all hover:bg-teal/20;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-md border border-hairline px-5 py-2.5 font-medium text-parchment/90 transition-all hover:border-gold/40 hover:text-parchment;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-hairline bg-well/60 px-2.5 py-1 font-mono text-[11px] uppercase tracking-wider text-sage;
+  }
+  .plaque {
+    @apply rounded-md border border-hairline bg-well/50 px-3 py-2 font-mono text-xs;
+  }
+  .field {
+    @apply w-full rounded-md border border-hairline bg-well/60 px-3.5 py-2.5 text-parchment placeholder:text-sage/60 focus:border-gold/50 focus:outline-none;
+  }
+  .card-surface {
+    @apply rounded-lg border border-hairline bg-card shadow-relic;
+  }
+}
