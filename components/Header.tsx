@@ -57,7 +57,7 @@ export function Header({ user }: { user: HeaderUser | null }) {
   return (
     <header className="sticky top-0 z-50">
       {/* Top strip */}
-      <div className="border-b border-hairline bg-well/80 backdrop-blur">
+      <div className="border-b border-hairline bg-well/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-1.5 text-xs">
           <div className="flex items-center gap-2 text-sage" aria-live="polite">
             <span className="h-1.5 w-1.5 rounded-full bg-teal" />
@@ -83,7 +83,7 @@ export function Header({ user }: { user: HeaderUser | null }) {
       </div>
 
       {/* Main bar */}
-      <div className={`border-b border-hairline bg-abyss/90 backdrop-blur transition-all ${scrolled ? "py-2" : "py-3"}`}>
+      <div className={`border-b border-hairline bg-abyss/95 backdrop-blur transition-all ${scrolled ? "py-2" : "py-3"}`}>
         <div className="mx-auto flex max-w-7xl items-center gap-4 px-4">
           <Link href={homeHref} aria-label="Runevault home">
             <Logo size={scrolled ? 26 : 30} />
@@ -126,7 +126,7 @@ export function Header({ user }: { user: HeaderUser | null }) {
       </div>
 
       {/* Desktop nav row */}
-      <nav aria-label="Primary" className="hidden border-b border-hairline bg-panel/80 backdrop-blur md:block" onMouseLeave={() => setOpenMenu(null)}>
+      <nav aria-label="Primary" className="hidden border-b border-hairline bg-panel/95 backdrop-blur md:block" onMouseLeave={() => setOpenMenu(null)}>
         <div className="mx-auto flex max-w-7xl items-center gap-1 px-4">
           {NAV.map((group) => (
             <div key={group.label} className="static" onMouseEnter={() => setOpenMenu(group.label)}>

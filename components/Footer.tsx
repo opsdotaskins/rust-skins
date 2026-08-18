@@ -20,7 +20,7 @@ const COLUMNS: { title: string; links: { label: string; href: string }[] }[] = [
       { label: "FAQ", href: "/faq" },
       { label: "Delivery", href: "/faq#delivery" },
       { label: "Refunds", href: "/legal/refunds" },
-      { label: "Contact", href: "/contact" },
+      { label: "Contact", href: "/contacts" },
     ],
   },
   {
@@ -76,8 +76,6 @@ export function Footer() {
             <p>Company reg no. {COMPANY.regNumber}</p>
             <p>
               <a href={`mailto:${CONTACT_EMAIL}`} className="hover:text-gold">{CONTACT_EMAIL}</a>
-              {" · "}
-              <a href={`tel:${COMPANY.phone.replace(/\s/g, "")}`} className="hover:text-gold">{COMPANY.phone}</a>
             </p>
           </div>
           <PaymentLogos />

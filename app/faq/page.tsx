@@ -29,7 +29,7 @@ export default function FaqPage() {
         <h1 className="mt-1 font-display text-3xl font-bold text-parchment sm:text-4xl">Frequently asked questions</h1>
         <p className="mt-3 text-sage">
           Everything about delivery, payment and your vault. Still stuck?{" "}
-          <Link href="/contact" className="text-teal hover:text-gold">Contact us</Link>.
+          <Link href="/contacts" className="text-teal hover:text-gold">Contact us</Link>.
         </p>
       </header>
 
