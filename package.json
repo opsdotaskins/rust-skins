@@ -1,8 +1,8 @@
 {
-  "name": "runevault",
+  "name": "rust-skins",
   "version": "1.0.0",
   "private": true,
-  "description": "Runevault — Dota 2 skins & cosmetics store",
+  "description": "rust-skins.com — Rust skins store",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

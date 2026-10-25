@@ -4,7 +4,7 @@ import { ItemGrid } from "@/components/ItemGrid";
 
 export const metadata: Metadata = {
   title: "Deals — Discounted Rust Skins",
-  description: "Discounted Rust skins at Runevault. Weapon finishes, apparel and base skins with reduced prices — delivered via Steam trade offer.",
+  description: "Discounted Rust skins at rust-skins.com. Weapon finishes, apparel and base skins with reduced prices — delivered via Steam trade offer.",
   alternates: { canonical: "/deals" },
 };
 

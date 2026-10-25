@@ -44,7 +44,7 @@ export default async function VerifyPage({
       </h1>
       <p className="mt-3 text-sage">
         {ok
-          ? "Your Runevault account is fully verified. Welcome to the vault."
+          ? "Your rust-skins.com account is fully verified. Welcome to the vault."
           : "This verification link is invalid or has expired."}
       </p>
       <Link href={ok ? "/dashboard" : "/login"} className="btn-gold mt-6">

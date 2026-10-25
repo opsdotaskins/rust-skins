@@ -59,7 +59,7 @@ export async function POST(request: Request) {
 
       await sendEmail({
         to: user.email,
-        subject: `Runevault order ${result.reference} confirmed`,
+        subject: `rust-skins.com order ${result.reference} confirmed`,
         html: orderConfirmationEmail(
           user.firstName,
           result.reference,

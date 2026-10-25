@@ -23,7 +23,7 @@ export async function generateMetadata({
   const title = `${q ? q + " " : ""}${item.name}`;
   return {
     title,
-    description: `${title} — a Rust ${RARITY_META[item.rarity as Rarity].label} skin. ${VALUES.deliveryPromise} from Runevault.`,
+    description: `${title} — a Rust ${RARITY_META[item.rarity as Rarity].label} skin. ${VALUES.deliveryPromise} from rust-skins.com.`,
     alternates: { canonical: `/item/${item.slug}` },
     openGraph: { title, images: [{ url: item.image }] },
   };

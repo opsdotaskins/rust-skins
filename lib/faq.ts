@@ -7,7 +7,7 @@ export const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "Are these authentic Rust skins?",
-    a: "Yes. Runevault sells authentic Rust skins — weapon finishes, apparel, base, deployables and tools. Every skin is delivered to your Steam inventory via a standard trade offer. We are not affiliated with Valve or Facepunch Studios.",
+    a: "Yes. rust-skins.com sells authentic Rust skins — weapon finishes, apparel, base, deployables and tools. Every skin is delivered to your Steam inventory via a standard trade offer. We are not affiliated with Valve or Facepunch Studios.",
   },
   {
     q: "Who can buy?",
@@ -35,10 +35,10 @@ export const FAQ: { q: string; a: string }[] = [
   },
   {
     q: "How does the store wallet work?",
-    a: `You can top up your Runevault balance and use it to purchase skins. Unused paid balance can be refunded at any time — email ${CONTACT_EMAIL} with your account email and top-up reference. Refunds normally go back to the original payment method.`,
+    a: `You can top up your rust-skins.com balance and use it to purchase skins. Unused paid balance can be refunded at any time — email ${CONTACT_EMAIL} with your account email and top-up reference. Refunds normally go back to the original payment method.`,
   },
   {
     q: "What do the rarity colours mean?",
-    a: "Runevault sorts skins onto a colour rarity scale — from Common and Uncommon up through Rare and Mythical — so you can read a skin's tier at a glance.",
+    a: "rust-skins.com sorts skins onto a colour rarity scale — from Common and Uncommon up through Rare and Mythical — so you can read a skin's tier at a glance.",
   },
 ];

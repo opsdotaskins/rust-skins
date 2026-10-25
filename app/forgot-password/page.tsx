@@ -4,7 +4,7 @@ import { ForgotForm } from "@/components/auth/ForgotForm";
 
 export const metadata: Metadata = {
   title: "Forgot password",
-  description: "Reset your Runevault account password.",
+  description: "Reset your rust-skins.com account password.",
   alternates: { canonical: "/forgot-password" },
 };
 

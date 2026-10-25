@@ -150,7 +150,7 @@ export async function runSeed(db: AnyDb): Promise<void> {
 
   const passwordHash = await bcrypt.hash("Treasure123!", 10);
   await db.insert(schema.users).values({
-    email: "demo@runevault.example.com",
+    email: "demo@rust-skins.example.com",
     passwordHash,
     firstName: "Demo",
     lastName: "Raider",

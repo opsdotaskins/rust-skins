@@ -51,7 +51,7 @@ export function LoginForm() {
         {submitting ? "Signing in…" : "Log In"}
       </button>
       <p className="text-center text-sm text-sage">
-        New to Runevault? <Link href="/register" className="text-teal hover:text-gold">Create an account</Link>
+        New to rust-skins.com? <Link href="/register" className="text-teal hover:text-gold">Create an account</Link>
       </p>
     </form>
   );

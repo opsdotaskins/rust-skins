@@ -16,11 +16,11 @@ export const COMPANY = {
 } as const;
 
 export const SITE = {
-  name: "Runevault",
+  name: "rust-skins.com",
   tagline: "Gear up your survival in style.",
   description:
-    "Runevault is the store for authentic Rust skins — weapons, apparel, base and deployables, delivered to your Steam inventory via trade offer.",
-  url: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
+    "rust-skins.com is the store for authentic Rust skins — weapons, apparel, base and deployables, delivered to your Steam inventory via trade offer.",
+  url: process.env.NEXT_PUBLIC_SITE_URL || "https://www.rust-skins.com",
   locale: "en_GB",
 } as const;
 

@@ -69,7 +69,7 @@ async function bootstrapPreviewDb(): Promise<void> {
 
   if (process.env.NODE_ENV !== "production") {
     console.log(
-      "[runevault] DATABASE_URL not set — using an in-memory preview database (seeded). Set DATABASE_URL to use your Neon database."
+      "[rust-skins] DATABASE_URL not set — using an in-memory preview database (seeded). Set DATABASE_URL to use your Neon database."
     );
   }
 }

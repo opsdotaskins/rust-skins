@@ -9,7 +9,7 @@ import type { CatalogFilters as Filters } from "@/lib/queries";
 export const metadata: Metadata = {
   title: "Catalog — Browse Rust Skins",
   description:
-    "Browse the Runevault catalog of authentic Rust skins. Filter by category, rarity and price. Every skin is delivered to your Steam inventory via trade offer.",
+    "Browse the rust-skins.com catalog of authentic Rust skins. Filter by category, rarity and price. Every skin is delivered to your Steam inventory via trade offer.",
   alternates: { canonical: "/catalog" },
 };
 

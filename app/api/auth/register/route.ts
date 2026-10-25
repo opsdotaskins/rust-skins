@@ -61,7 +61,7 @@ export async function POST(request: Request) {
   const verifyUrl = `${SITE.url}/verify?token=${token}`;
   await sendEmail({
     to: user.email,
-    subject: "Confirm your Runevault account",
+    subject: "Confirm your rust-skins.com account",
     html: registrationConfirmationEmail(user.firstName, verifyUrl),
   }).catch((e) => console.error("Registration email failed:", e));
 

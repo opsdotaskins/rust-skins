@@ -6,7 +6,7 @@ import { COMPANY } from "@/lib/config";
 
 export const metadata: Metadata = {
   title: "Checkout",
-  description: "Securely complete your Runevault order. Pay by Visa or Mastercard; skins are delivered via Steam trade offer.",
+  description: "Securely complete your rust-skins.com order. Pay by Visa or Mastercard; skins are delivered via Steam trade offer.",
   robots: { index: false, follow: false },
 };
 

@@ -32,7 +32,7 @@ export async function POST(request: Request) {
     const resetUrl = `${SITE.url}/reset-password?token=${token}`;
     await sendEmail({
       to: user.email,
-      subject: "Reset your Runevault password",
+      subject: "Reset your rust-skins.com password",
       html: passwordResetEmail(user.firstName, resetUrl),
     }).catch((e) => console.error("Reset email failed:", e));
   }

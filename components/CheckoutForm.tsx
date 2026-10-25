@@ -85,7 +85,7 @@ export function CheckoutForm({
           )}
         </section>
 
-        {/* Payment method — funded from your Runevault wallet */}
+        {/* Payment method — funded from your rust-skins.com wallet */}
         <section className="card-surface p-5">
           <div className="mb-4 flex items-center justify-between">
             <p className="engraved text-[10px] text-gold">Payment</p>
@@ -93,7 +93,7 @@ export function CheckoutForm({
           </div>
 
           <div className="flex items-center justify-between rounded-md border border-gold/50 bg-gold/5 p-3">
-            <span className="text-sm text-parchment">Runevault wallet</span>
+            <span className="text-sm text-parchment">rust-skins.com wallet</span>
             <span className="font-mono text-sm text-gold">{format(balanceMinor)}</span>
           </div>
           {!canUseBalance && (

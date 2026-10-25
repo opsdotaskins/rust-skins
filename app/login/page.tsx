@@ -7,7 +7,7 @@ import { LoginForm } from "@/components/auth/LoginForm";
 
 export const metadata: Metadata = {
   title: "Log In",
-  description: "Log in to your Runevault account to browse and buy authentic Rust skins.",
+  description: "Log in to your rust-skins.com account to browse and buy authentic Rust skins.",
   alternates: { canonical: "/login" },
 };
 

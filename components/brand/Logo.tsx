@@ -1,14 +1,14 @@
 import type { SVGProps } from "react";
 
 /**
- * Runevault mark — a carved rune inside a faceted vault-door ring with a
+ * rust-skins.com mark — a carved rune inside a faceted vault-door ring with a
  * faint inner glow. Geometric, mystical, legible at 16px. `mono` renders a
  * single-colour lockup.
  */
 export function RuneMark({
   size = 32,
   mono = false,
-  title = "Runevault",
+  title = "rust-skins.com",
   ...props
 }: { size?: number; mono?: boolean; title?: string } & SVGProps<SVGSVGElement>) {
   const gold = mono ? "currentColor" : "#E8B44A";
@@ -89,8 +89,8 @@ export function Logo({
       className="font-display font-bold leading-none tracking-[0.06em]"
       style={{ fontSize: size * 0.62 }}
     >
-      <span className={mono ? "" : "text-parchment"}>Rune</span>
-      <span className={mono ? "" : "text-gold"}>vault</span>
+      <span className={mono ? "" : "text-parchment"}>rust-skins</span>
+      <span className={mono ? "" : "text-gold"}>.com</span>
     </span>
   );
 

@@ -7,7 +7,7 @@ const sql = neon(process.env.DATABASE_URL!);
 const db = drizzle(sql, { schema });
 
 async function main() {
-  console.log("Seeding Runevault…");
+  console.log("Seeding rust-skins.com…");
   await runSeed(db);
   console.log("Seed complete.");
 }

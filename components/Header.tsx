@@ -85,7 +85,7 @@ export function Header({ user }: { user: HeaderUser | null }) {
       {/* Main bar */}
       <div className={`border-b border-hairline bg-abyss/95 backdrop-blur transition-all ${scrolled ? "py-2" : "py-3"}`}>
         <div className="mx-auto flex max-w-7xl items-center gap-4 px-4">
-          <Link href={homeHref} aria-label="Runevault home">
+          <Link href={homeHref} aria-label="rust-skins.com home">
             <Logo size={scrolled ? 26 : 30} />
           </Link>
 

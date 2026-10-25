@@ -30,7 +30,7 @@ export function buildInvoicePdf(data: InvoiceData): Promise<Buffer> {
       .fillColor(gold)
       .fontSize(24)
       .font("Helvetica-Bold")
-      .text("RUNEVAULT", { continued: false });
+      .text("RUST-SKINS.COM", { continued: false });
     doc
       .fillColor(muted)
       .fontSize(10)
@@ -128,7 +128,7 @@ export function buildInvoicePdf(data: InvoiceData): Promise<Buffer> {
       )
       .moveDown(0.5)
       .text(
-        `${SITE.url} · Runevault is not affiliated with or endorsed by Facepunch Studios or Valve Corporation. Rust is a trademark of Facepunch Studios.`,
+        `${SITE.url} · rust-skins.com is not affiliated with or endorsed by Facepunch Studios or Valve Corporation. Rust is a trademark of Facepunch Studios.`,
         { width: 495 }
       );
 
