@@ -69,7 +69,7 @@ export function buildInvoicePdf(data: InvoiceData): Promise<Buffer> {
       .text(COMPANY.name)
       .text(COMPANY.address)
       .text(`Reg: ${COMPANY.regNumber}`)
-      .text(`${CONTACT_EMAIL} · ${COMPANY.phone}`);
+      .text(CONTACT_EMAIL);
 
     doc.moveDown(1.2);
     // Table header

@@ -137,10 +137,11 @@ export function CheckoutForm({
         <label className="mt-5 flex items-start gap-2.5 text-sm text-sage">
           <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="mt-0.5 accent-[#E8B44A]" />
           <span>
-            I have read and agree to the{" "}
-            <Link href="/legal/terms" className="text-teal hover:underline">Terms &amp; Conditions</Link>,{" "}
-            <Link href="/legal/refunds" className="text-teal hover:underline">Refund Policy</Link> and{" "}
-            <Link href="/legal/payment" className="text-teal hover:underline">Payment Policy</Link>.
+            I agree to the{" "}
+            <Link href="/legal/terms" className="text-teal hover:underline">Terms &amp; Conditions</Link> and the{" "}
+            <Link href="/legal/payment" className="text-teal hover:underline">Payment</Link>,{" "}
+            <Link href="/legal/delivery" className="text-teal hover:underline">Digital Delivery</Link> and{" "}
+            <Link href="/legal/refunds" className="text-teal hover:underline">Refund &amp; Cancellation</Link> Policies.
           </span>
         </label>
 

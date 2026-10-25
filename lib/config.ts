@@ -1,19 +1,18 @@
 /**
  * Single source of truth for company data, values and policy constants.
  * Every page, policy, footer and checkout MUST read from here so numbers
- * never drift. Placeholders are used where real details are not provided.
+ * never drift.
  */
 
-export const CONTACT_EMAIL =
-  process.env.NEXT_PUBLIC_CONTACT_EMAIL || "youremail@example.com";
+export const CONTACT_EMAIL = "info@rust-skins.com";
 
 export const COMPANY = {
-  name: "COMPANY NAME",
-  tradingAs: "Runevault",
-  address: "[COMPANY ADDRESS]",
-  regNumber: "[REG_NUMBER]",
-  phone: "+44 20 7946 0000",
+  name: "BETTERB LTD",
+  tradingAs: "rust-skins.com",
+  address: "Dept 7014, 196 High Road, Wood Green, London, United Kingdom, N22 8HH",
+  regNumber: "17406491",
   email: CONTACT_EMAIL,
+  website: "https://www.rust-skins.com/",
 } as const;
 
 export const SITE = {
@@ -81,4 +80,4 @@ export const COUNTRIES = [
 export const PHONE_HINT = "+44 7700 900123";
 
 export const TRADEMARK_DISCLAIMER =
-  "Runevault is not affiliated with or endorsed by Facepunch Studios or Valve Corporation. Rust is a trademark of Facepunch Studios. All skin names and related imagery are the property of their respective owners.";
+  "rust-skins.com is not affiliated with or endorsed by Facepunch Studios or Valve Corporation. Rust is a trademark of Facepunch Studios. All skin names and related imagery are the property of their respective owners.";

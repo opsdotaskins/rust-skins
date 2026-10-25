@@ -21,6 +21,10 @@ const nextConfig = {
   // Keep native/WASM-backed packages out of the webpack bundle so they load
   // their own assets from node_modules at runtime.
   serverExternalPackages: ["@electric-sql/pglite", "pdfkit", "fontkit"],
+  // Policy texts are read from disk at request time by components/LegalPage.
+  outputFileTracingIncludes: {
+    "/legal/*": ["./content/legal/**/*"],
+  },
 };
 
 export default nextConfig;

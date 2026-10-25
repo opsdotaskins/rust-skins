@@ -51,7 +51,6 @@ export default async function RootLayout({
     legalName: COMPANY.name,
     url: SITE.url,
     email: CONTACT_EMAIL,
-    telephone: COMPANY.phone,
     description: SITE.description,
     slogan: SITE.tagline,
   };
