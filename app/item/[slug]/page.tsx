@@ -121,7 +121,7 @@ export default async function ItemPage({
           <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-xs text-sage">
             <span>✦ {VALUES.deliveryPromise}</span>
             <span>✦ Authentic Rust skin</span>
-            <span>✦ {VALUES.refundWindowDays}-day refund window</span>
+            <Link href="/legal/refunds" className="hover:text-gold">✦ Refund &amp; Cancellation Policy</Link>
           </div>
         </div>
       </div>

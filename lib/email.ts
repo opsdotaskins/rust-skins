@@ -54,7 +54,7 @@ function shell(title: string, inner: string) {
     <tr><td style="padding:28px;line-height:1.6;font-size:15px">${inner}</td></tr>
     <tr><td style="padding:20px 28px;border-top:1px solid #25382E;font-size:12px;color:#8FA093">
       ${COMPANY.name} · ${COMPANY.address} · Reg ${COMPANY.regNumber}<br/>
-      Need help? ${CONTACT_EMAIL} · Support ${"24/7"}<br/>
+      Need help? ${CONTACT_EMAIL}<br/>
       Runevault is not affiliated with or endorsed by Facepunch Studios or Valve Corporation. Rust is a trademark of Facepunch Studios.
     </td></tr>
   </table></body></html>`;
@@ -64,7 +64,7 @@ export function registrationConfirmationEmail(name: string, verifyUrl: string) {
   return shell(
     "Welcome to the vault",
     `<h1 style="font-size:20px;margin:0 0 12px">Welcome, ${escapeHtml(name)}.</h1>
-     <p style="color:#8FA093;margin:0 0 20px">Your Runevault account is ready. Confirm your email to unlock instant delivery on every relic.</p>
+     <p style="color:#8FA093;margin:0 0 20px">Your Runevault account is ready. Confirm your email to start ordering.</p>
      <p><a href="${verifyUrl}" style="display:inline-block;background:#E8B44A;color:#0B1512;font-weight:700;text-decoration:none;padding:12px 22px;border-radius:8px">Confirm email</a></p>
      <p style="color:#8FA093;font-size:13px;margin-top:20px">If the button doesn't work, paste this link:<br/><span style="color:#2FA98C">${verifyUrl}</span></p>`
   );
@@ -97,7 +97,7 @@ export function orderConfirmationEmail(
   return shell(
     `Order ${reference} confirmed`,
     `<h1 style="font-size:20px;margin:0 0 12px">Thank you, ${escapeHtml(name)}.</h1>
-     <p style="color:#8FA093;margin:0 0 20px">Your relics have been delivered instantly to your inventory. Your invoice is attached as a PDF.</p>
+     <p style="color:#8FA093;margin:0 0 20px">Your order is confirmed and your relics are being sent to your Steam account by trade offer — usually within a few minutes. Delivery is complete once you accept the trade in Steam. If it has not arrived within 24 hours, reply with your order reference. Your invoice is attached as a PDF.</p>
      <table role="presentation" width="100%" style="border-collapse:collapse;font-size:14px">${rows}
        <tr><td style="padding:12px 0;font-weight:700">Total</td><td style="padding:12px 0;text-align:right;font-family:monospace;font-weight:700;color:#E8B44A">${total}</td></tr>
      </table>`

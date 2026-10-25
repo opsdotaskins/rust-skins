@@ -121,7 +121,7 @@ export function buildInvoicePdf(data: InvoiceData): Promise<Buffer> {
       .fontSize(8)
       .font("Helvetica")
       .text(
-        `Tax is included in the price. Delivery: ${VALUES.deliveryPromise}. Refund window: ${VALUES.refundWindowDays} days. Support: ${VALUES.supportHours}.`,
+        `Tax is included in the price. Delivery: ${VALUES.deliveryPromise}; delivery is complete once the trade is accepted in Steam. Refunds and cancellations: ${SITE.url}/legal/refunds. Support: ${CONTACT_EMAIL}.`,
         50,
         doc.y,
         { width: 495 }

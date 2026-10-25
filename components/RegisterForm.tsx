@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { COUNTRIES, PHONE_HINT } from "@/lib/config";
+import { COUNTRIES, MIN_AGE, PHONE_HINT } from "@/lib/config";
 
 type Fields = {
   email: string;
@@ -52,7 +52,7 @@ export function RegisterForm() {
       if (!fields.dateOfBirth) e.dateOfBirth = "Date of birth is required";
       else {
         const age = (Date.now() - Date.parse(fields.dateOfBirth)) / (365.25 * 864e5);
-        if (age < 16) e.dateOfBirth = "You must be at least 16";
+        if (age < MIN_AGE) e.dateOfBirth = `You must be at least ${MIN_AGE}`;
       }
     }
     if (s === 2) {

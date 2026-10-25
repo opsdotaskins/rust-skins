@@ -54,7 +54,7 @@ export default function CartPage() {
           <dl className="space-y-2 text-sm">
             <div className="flex justify-between"><dt className="text-sage">Subtotal</dt><dd className="font-mono text-parchment">{format(cart.subtotalMinor)}</dd></div>
             <div className="flex justify-between"><dt className="text-sage">Service fee</dt><dd className="font-mono text-parchment">{format(VALUES.serviceFeeMinor)}</dd></div>
-            <div className="flex justify-between"><dt className="text-sage">Delivery</dt><dd className="font-mono text-teal">Instant</dd></div>
+            <div className="flex justify-between"><dt className="text-sage">Delivery</dt><dd className="font-mono text-teal">Steam trade offer</dd></div>
           </dl>
           <div className="my-4 filigree-divider" />
           <div className="flex items-center justify-between">

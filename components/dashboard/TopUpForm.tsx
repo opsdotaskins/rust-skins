@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCurrency } from "@/components/providers";
 import { PaymentLogos } from "@/components/PaymentLogos";
+import { CONTACT_EMAIL } from "@/lib/config";
 
 const PRESETS = [10, 25, 50, 100];
 
@@ -13,6 +15,7 @@ export function TopUpForm() {
   const [amount, setAmount] = useState<string>("25");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [agreed, setAgreed] = useState(false);
 
   const parsed = Number.parseFloat(amount);
   const valid = Number.isFinite(parsed) && parsed > 0;
@@ -21,6 +24,7 @@ export function TopUpForm() {
     e.preventDefault();
     setError(null);
     if (!valid) return setError("Enter a valid amount");
+    if (!agreed) return setError("Please accept the Terms and policies to continue");
     setSubmitting(true);
     try {
       const res = await fetch("/api/wallet/topup", {
@@ -86,9 +90,20 @@ export function TopUpForm() {
         </div>
       </div>
 
+      <label className="flex items-start gap-2.5 text-sm text-sage">
+        <input type="checkbox" checked={agreed} onChange={(e) => setAgreed(e.target.checked)} className="mt-0.5 accent-[#E8B44A]" />
+        <span>
+          I agree to the{" "}
+          <Link href="/legal/terms" className="text-teal hover:underline">Terms &amp; Conditions</Link>,{" "}
+          <Link href="/legal/payment" className="text-teal hover:underline">Payment Policy</Link> and{" "}
+          <Link href="/legal/balance" className="text-teal hover:underline">Account Balance &amp; Top-Up Policy</Link>.
+          Unused paid balance can be refunded by contacting {CONTACT_EMAIL}.
+        </span>
+      </label>
+
       {error && <p className="text-sm text-loss">{error}</p>}
 
-      <button type="submit" disabled={submitting || !valid} className="btn-gold w-full">
+      <button type="submit" disabled={submitting || !valid || !agreed} className="btn-gold w-full">
         {submitting ? "Processing…" : "Add funds"}
       </button>
 

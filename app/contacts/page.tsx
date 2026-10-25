@@ -14,7 +14,7 @@ export default function ContactsPage() {
       <header className="text-center">
         <p className="engraved text-[10px] text-gold">We&apos;re here to help</p>
         <h1 className="mt-1 font-display text-3xl font-bold text-parchment sm:text-4xl">Contacts</h1>
-        <p className="mt-3 text-sage">Support is available {VALUES.supportHours}. Most questions are answered in our FAQ.</p>
+        <p className="mt-3 text-sage">Email us any time — we aim to give an {VALUES.supportResponse}. Most questions are answered in our FAQ.</p>
       </header>
 
       <div className="mt-10 grid gap-6 sm:grid-cols-2">
@@ -24,9 +24,9 @@ export default function ContactsPage() {
           <p className="mt-2 text-sm text-sage">Order help, delivery, refunds and account questions.</p>
         </div>
         <div className="card-surface p-6">
-          <p className="engraved text-[10px] text-sage">Support hours</p>
-          <p className="mt-1 text-lg text-parchment">{VALUES.supportHours}</p>
-          <p className="mt-2 text-sm text-sage">{VALUES.deliveryPromise} to your Steam inventory via trade offer.</p>
+          <p className="engraved text-[10px] text-sage">Response time</p>
+          <p className="mt-1 text-lg text-parchment">Within 5 business days</p>
+          <p className="mt-2 text-sm text-sage">Our target for an initial reply. Delivery issues can be reported any time.</p>
         </div>
       </div>
 

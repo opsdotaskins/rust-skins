@@ -39,7 +39,7 @@ export default function FaqPage() {
 
       <div className="mt-10 rounded-xl border border-gold/25 bg-card p-6 text-center shadow-glow-soft">
         <p className="text-parchment">Need a hand from a real person?</p>
-        <p className="mt-1 text-sm text-sage">Support is available {VALUES.supportHours}.</p>
+        <p className="mt-1 text-sm text-sage">We aim to give an {VALUES.supportResponse}.</p>
         <a href={`mailto:${CONTACT_EMAIL}`} className="btn-gold mt-4">Email {CONTACT_EMAIL}</a>
       </div>
     </div>

@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { CONTACT_EMAIL } from "@/lib/config";
 import { getCurrentUser } from "@/lib/auth";
 import { getUserTransactions } from "@/lib/orders";
 import { Price } from "@/components/Price";
@@ -20,7 +22,13 @@ export default async function WalletPage() {
       <div className="corner-brackets rounded-xl border border-gold/25 bg-card p-6 shadow-glow-soft">
         <p className="engraved text-[10px] text-sage">Available balance</p>
         <Price gbpMinor={user.balanceMinor} className="mt-1 block text-4xl text-gold" />
-        <p className="mt-2 text-sm text-sage">Use your balance for instant, one-tap checkout on any relic.</p>
+        <p className="mt-2 text-sm text-sage">Use your balance for one-tap checkout on any relic.</p>
+        <p className="mt-1 text-xs text-sage/80">
+          To request a refund of unused paid balance, email{" "}
+          <a href={`mailto:${CONTACT_EMAIL}`} className="text-teal hover:text-gold">{CONTACT_EMAIL}</a> with your Account email and
+          top-up reference. Do not include full card details, passwords or security codes. See the{" "}
+          <Link href="/legal/balance" className="text-teal hover:text-gold">Account Balance &amp; Top-Up Policy</Link>.
+        </p>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">

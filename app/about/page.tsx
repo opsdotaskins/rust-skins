@@ -4,15 +4,15 @@ import { SITE, VALUES, TRADEMARK_DISCLAIMER } from "@/lib/config";
 
 export const metadata: Metadata = {
   title: "About",
-  description: `${SITE.name} is the store for authentic Rust skins — weapons, apparel, base and deployables, delivered instantly to your Steam inventory.`,
+  description: `${SITE.name} is the store for authentic Rust skins — weapons, apparel, base and deployables, delivered to your Steam inventory by trade offer.`,
   alternates: { canonical: "/about" },
 };
 
 const PILLARS = [
   { title: "Authentic skins", body: "Every item is a genuine Rust skin, delivered to your Steam inventory via trade offer." },
-  { title: "Instant delivery", body: `${VALUES.deliveryPromise}. The moment your payment clears, the skin is on its way to Steam.` },
+  { title: "Fast delivery", body: `${VALUES.deliveryPromise}. Once payment is confirmed, your skin is sent to Steam — ${VALUES.deliveryEstimate}.` },
   { title: "Honest pricing", body: "The price you see is the price you pay. Tax is included and there is no service fee." },
-  { title: "Real support", body: `A team available ${VALUES.supportHours} for any order, delivery or account question.` },
+  { title: "Real support", body: `Email us about any order, delivery, refund or account question — ${VALUES.supportResponse}.` },
 ];
 
 export default function AboutPage() {

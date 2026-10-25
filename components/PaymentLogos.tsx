@@ -1,10 +1,9 @@
 import Image from "next/image";
 
-/** Full-colour Visa, Mastercard and PCI DSS marks. Never greyscale. */
+/** Full-colour Visa and Mastercard marks. Never greyscale. */
 const MARKS = [
   { src: "/payments/visa.svg", label: "Visa" },
   { src: "/payments/mastercard.svg", label: "Mastercard" },
-  { src: "/payments/pci-dss.svg", label: "PCI DSS Compliant" },
 ] as const;
 
 export function PaymentLogos({ className = "" }: { className?: string }) {

@@ -15,9 +15,9 @@ export interface HeaderUser {
 }
 
 const REASSURANCE = [
-  "Instant delivery",
-  "Official store",
-  "24/7 support",
+  "Delivery via Steam trade offer",
+  "Visa & Mastercard",
+  "EUR · GBP · USD",
   "Secure payment",
 ];
 
@@ -62,7 +62,7 @@ export function Header({ user }: { user: HeaderUser | null }) {
           <div className="flex items-center gap-2 text-sage" aria-live="polite">
             <span className="h-1.5 w-1.5 rounded-full bg-teal" />
             <span className="engraved text-[10px]">{REASSURANCE[strip]}</span>
-            <span className="hidden text-sage/50 sm:inline">· Official store · 24/7 support</span>
+            <span className="hidden text-sage/50 sm:inline">· 18+ only · Email support</span>
           </div>
           <div className="flex items-center gap-3">
             <CurrencySelector value={currency} onChange={setCurrency} />

@@ -4,7 +4,7 @@ import { ItemGrid } from "@/components/ItemGrid";
 
 export const metadata: Metadata = {
   title: "Deals — Discounted Rust Skins",
-  description: "Discounted Rust skins at Runevault. Weapon finishes, apparel and base skins with reduced prices — instant delivery on every skin.",
+  description: "Discounted Rust skins at Runevault. Weapon finishes, apparel and base skins with reduced prices — delivered via Steam trade offer.",
   alternates: { canonical: "/deals" },
 };
 
@@ -16,7 +16,7 @@ export default async function DealsPage() {
       <header className="mb-8">
         <p className="engraved mb-2 text-[10px] text-gold">Marked down</p>
         <h1 className="font-display text-3xl font-bold tracking-tight text-parchment sm:text-4xl">Deals</h1>
-        <p className="mt-2 max-w-2xl text-sm text-sage">Skins with reduced prices, straight from the armoury. Tax included, delivered to Steam instantly.</p>
+        <p className="mt-2 max-w-2xl text-sm text-sage">Skins with reduced prices, straight from the armoury. Tax included, delivered to Steam by trade offer.</p>
       </header>
       {deals.length === 0 ? (
         <p className="rounded-lg border border-hairline bg-card p-10 text-center text-sage">No active deals right now — check back soon.</p>

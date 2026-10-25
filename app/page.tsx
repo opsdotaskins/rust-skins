@@ -79,7 +79,7 @@ export default async function HomePage() {
               <span>✦ {VALUES.deliveryPromise}</span>
               <span>✦ Authentic Rust skins</span>
               <span>✦ Secure payment</span>
-              <span>✦ Support {VALUES.supportHours}</span>
+              <span>✦ Email support</span>
             </div>
           </div>
 
@@ -185,10 +185,10 @@ export default async function HomePage() {
         {/* Benefits */}
         <Reveal as="section" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { t: "Instant delivery", d: VALUES.deliveryPromise + " to your Steam inventory." , icon: "M13 2 3 14h7l-1 8 10-12h-7l1-8Z" },
+            { t: "Fast delivery", d: `Sent to your Steam inventory by trade offer — ${VALUES.deliveryEstimate}.`, icon: "M13 2 3 14h7l-1 8 10-12h-7l1-8Z" },
             { t: "Authentic skins", d: "Real Rust skins, delivered by trade offer.", icon: "M12 2 4 6v6c0 5 3.4 8 8 10 4.6-2 8-5 8-10V6l-8-4Z" },
-            { t: "Secure payment", d: "PCI DSS compliant Visa & Mastercard.", icon: "M2 7h20v10H2zM2 11h20" },
-            { t: "Support 24/7", d: "Real help whenever you need it.", icon: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 6v5l3 2" },
+            { t: "Secure payment", d: "Visa & Mastercard in EUR, GBP or USD.", icon: "M2 7h20v10H2zM2 11h20" },
+            { t: "Real support", d: `Email us any time — ${VALUES.supportResponse}.`, icon: "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 6v5l3 2" },
           ].map((b) => (
             <div key={b.t} className="card-surface hover-lift group p-5">
               <span className="mb-3 grid h-10 w-10 place-items-center rounded-lg bg-gold/10 text-gold transition-transform duration-300 group-hover:scale-110 group-hover:animate-glow-pulse">

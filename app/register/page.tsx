@@ -6,7 +6,7 @@ import { RegisterForm } from "@/components/RegisterForm";
 
 export const metadata: Metadata = {
   title: "Create your account",
-  description: "Create a Runevault account to buy authentic Rust skins with instant delivery.",
+  description: "Create a Runevault account to buy authentic Rust skins delivered via Steam trade offer.",
   alternates: { canonical: "/register" },
 };
 

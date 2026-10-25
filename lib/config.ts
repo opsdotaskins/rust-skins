@@ -19,28 +19,48 @@ export const SITE = {
   name: "Runevault",
   tagline: "Gear up your survival in style.",
   description:
-    "Runevault is the store for authentic Rust skins — weapons, apparel, base and deployables, delivered instantly to your Steam inventory via trade offer.",
+    "Runevault is the store for authentic Rust skins — weapons, apparel, base and deployables, delivered to your Steam inventory via trade offer.",
   url: process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000",
   locale: "en_GB",
 } as const;
 
-/** Single canonical values — identical everywhere (FAQ, policies, checkout). */
+/**
+ * Single canonical values — identical everywhere (FAQ, policies, checkout).
+ * Must match content/legal/*.md: no instant/"in seconds" or 24/7 promises.
+ */
 export const VALUES = {
-  supportHours: "24/7",
-  deliveryPromise: "Instant digital delivery",
-  refundWindowDays: 14,
+  deliveryPromise: "Digital delivery via Steam trade offer",
+  deliveryEstimate: "usually within a few minutes",
+  supportResponse: "initial response within 5 business days",
   serviceFeeMinor: 0, // no service fee; if ever set, reads identically everywhere
 } as const;
 
+/** Minimum customer age (Terms §3). */
+export const MIN_AGE = 18;
+
 /**
- * Countries excluded from registration (sanctions/compliance).
- * Kept as a config constant so the list is trivially extendable.
+ * Countries we do not serve (Terms §3). Keep in sync with content/legal/terms.md.
  */
 export const EXCLUDED_COUNTRIES = [
-  "Russia",
+  "Afghanistan",
   "Belarus",
+  "Central African Republic",
+  "Cuba",
+  "Democratic Republic of the Congo",
+  "Haiti",
   "Iran",
+  "Iraq",
+  "Mali",
+  "Myanmar",
   "North Korea",
+  "Russia",
+  "Somalia",
+  "South Sudan",
+  "Sudan",
+  "Syria",
+  "Venezuela",
+  "Yemen",
+  "Zimbabwe",
 ] as const;
 
 /** Allowed registration countries (region-appropriate, GB-first). */
