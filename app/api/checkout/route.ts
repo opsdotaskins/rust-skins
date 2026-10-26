@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import {
   createOrder,
+  createPendingCardOrder,
   SteamNotLinkedError,
   InsufficientBalanceError,
   type CartInput,
@@ -18,7 +19,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  let body: { cart?: CartInput[]; payWithBalance?: boolean };
+  let body: {
+    cart?: CartInput[];
+    payWithBalance?: boolean;
+    paymentMethod?: "wallet" | "card";
+  };
   try {
     body = await request.json();
   } catch {
@@ -32,8 +37,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Cart is empty" }, { status: 400 });
   }
 
+  const method = body.paymentMethod || (body.payWithBalance ? "wallet" : "card");
+
   try {
-    const result = await createOrder(user.id, cart, Boolean(body.payWithBalance));
+    if (method === "card") {
+      const result = await createPendingCardOrder(user.id, cart);
+      return NextResponse.json({
+        reference: result.reference,
+        hppUrl: result.hppUrl,
+      });
+    }
+
+    const result = await createOrder(user.id, cart, true);
 
     const lines = result.lines.map((l) => ({
       name: l.quantity > 1 ? `${l.item.name} × ${l.quantity}` : l.item.name,
@@ -87,6 +102,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: e.message, code: "INSUFFICIENT_BALANCE" }, { status: 402 });
     }
     console.error("Checkout failed:", e);
-    return NextResponse.json({ error: "Checkout failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : "Checkout failed" },
+      { status: 500 }
+    );
   }
 }

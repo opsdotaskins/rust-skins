@@ -22,13 +22,18 @@ export function CheckoutForm({
   const cart = useCart();
   const { format } = useCurrency();
   const router = useRouter();
+  const [paymentMethod, setPaymentMethod] = useState<"card" | "wallet">("card");
   const [agreed, setAgreed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const totalMinor = cart.subtotalMinor + VALUES.serviceFeeMinor;
   const canUseBalance = balanceMinor >= totalMinor;
-  const canPay = steamLinked && canUseBalance && agreed && !submitting;
+  const canPay =
+    steamLinked &&
+    agreed &&
+    !submitting &&
+    (paymentMethod === "card" || (paymentMethod === "wallet" && canUseBalance));
 
   if (cart.lines.length === 0) {
     return (
@@ -49,12 +54,19 @@ export function CheckoutForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           cart: cart.lines.map((l) => ({ id: l.id, quantity: l.quantity })),
-          payWithBalance: true,
+          paymentMethod,
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Checkout failed");
+
       cart.clear();
+
+      if (data.hppUrl) {
+        window.location.href = data.hppUrl;
+        return;
+      }
+
       router.push(`/order/${data.reference}`);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong");
@@ -85,23 +97,87 @@ export function CheckoutForm({
           )}
         </section>
 
-        {/* Payment method — funded from your rust-skins.com wallet */}
+        {/* Payment method — Visa / Mastercard (HPP) or rust-skins.com wallet */}
         <section className="card-surface p-5">
           <div className="mb-4 flex items-center justify-between">
             <p className="engraved text-[10px] text-gold">Payment</p>
             <PaymentLogos />
           </div>
 
-          <div className="flex items-center justify-between rounded-md border border-gold/50 bg-gold/5 p-3">
-            <span className="text-sm text-parchment">rust-skins.com wallet</span>
-            <span className="font-mono text-sm text-gold">{format(balanceMinor)}</span>
+          <div className="space-y-3">
+            {/* Visa / Mastercard HPP */}
+            <label
+              className={`flex cursor-pointer items-center justify-between rounded-lg border p-4 transition-all ${
+                paymentMethod === "card"
+                  ? "border-gold bg-gold/10 shadow-sm ring-1 ring-gold/30"
+                  : "border-hairline bg-card/60 hover:border-gold/40"
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value="card"
+                  checked={paymentMethod === "card"}
+                  onChange={() => setPaymentMethod("card")}
+                  className="accent-[#E8B44A]"
+                />
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-parchment">Visa / Mastercard</span>
+                    <span className="rounded-full bg-profit/10 px-2 py-0.5 text-[10px] font-medium text-profit">
+                      Instant &amp; Secure
+                    </span>
+                  </div>
+                  <span className="mt-0.5 block text-xs text-sage">
+                    Pay securely with your credit or debit card
+                  </span>
+                </div>
+              </div>
+              <PaymentLogos />
+            </label>
+
+            {/* rust-skins.com wallet */}
+            <label
+              className={`flex cursor-pointer items-center justify-between rounded-lg border p-4 transition-all ${
+                paymentMethod === "wallet"
+                  ? "border-gold bg-gold/10 shadow-sm ring-1 ring-gold/30"
+                  : "border-hairline bg-card/60 hover:border-gold/40"
+              } ${!canUseBalance ? "opacity-75" : ""}`}
+            >
+              <div className="flex items-center gap-3">
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value="wallet"
+                  checked={paymentMethod === "wallet"}
+                  onChange={() => setPaymentMethod("wallet")}
+                  disabled={!canUseBalance}
+                  className="accent-[#E8B44A]"
+                />
+                <div>
+                  <span className="block text-sm font-medium text-parchment">rust-skins.com wallet</span>
+                  <span className="mt-0.5 block text-xs text-sage">
+                    {canUseBalance
+                      ? "Pay instantly using your available account balance"
+                      : "Insufficient balance"}
+                  </span>
+                </div>
+              </div>
+              <div className="text-right">
+                <span className="font-mono text-sm text-gold">{format(balanceMinor)}</span>
+                {!canUseBalance && (
+                  <Link
+                    href="/dashboard/wallet"
+                    onClick={(e) => e.stopPropagation()}
+                    className="block text-[11px] text-teal hover:underline"
+                  >
+                    Top up wallet
+                  </Link>
+                )}
+              </div>
+            </label>
           </div>
-          {!canUseBalance && (
-            <p className="mt-2 text-[12px] text-sage">
-              Balance too low for this order.{" "}
-              <Link href="/dashboard/wallet" className="text-teal hover:underline">Top up your wallet</Link> to continue.
-            </p>
-          )}
         </section>
 
         {/* Seller details — legal name & address on final page */}
@@ -149,12 +225,18 @@ export function CheckoutForm({
 
         <button type="button" onClick={placeOrder} disabled={!canPay} className="btn-gold mt-4 w-full">
           {submitting
-            ? "Processing…"
+            ? paymentMethod === "card"
+              ? "Redirecting to payment…"
+              : "Processing…"
             : !steamLinked
               ? "Link Steam to continue"
-              : !canUseBalance
-                ? "Top up to continue"
-                : `Pay ${format(totalMinor)}`}
+              : !agreed
+                ? "Agree to terms to continue"
+                : paymentMethod === "wallet" && !canUseBalance
+                  ? "Top up wallet to continue"
+                  : paymentMethod === "card"
+                    ? `Pay with Card · ${format(totalMinor)}`
+                    : `Pay with Wallet · ${format(totalMinor)}`}
         </button>
         <p className="mt-3 text-center text-[11px] text-sage">✦ Secure payment · Delivered to Steam via trade offer</p>
       </aside>

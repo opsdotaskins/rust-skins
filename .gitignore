@@ -10,4 +10,5 @@ next-env.d.ts
 /addons/.env*
 .vercel
 .DS_Store
+.idea
 /drizzle/meta

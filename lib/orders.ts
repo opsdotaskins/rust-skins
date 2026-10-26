@@ -9,8 +9,16 @@ import {
   SIH_TEST_MODE,
   SihError,
 } from "./sih";
+import { convertFromMinor, formatMinor, toGbpMinor, type CurrencyCode } from "./currency";
+import { buildInvoicePdf } from "./invoice";
+import { sendEmail, orderConfirmationEmail } from "./email";
+import {
+  createCorefyPaymentInvoice,
+  ensurePaymentInvoicesTable,
+  getCorefyConfig,
+} from "./corefy";
 
-const { items, orders, orderItems, transactions, users } = schema;
+const { items, orders, orderItems, transactions, users, paymentInvoices } = schema;
 
 export interface CartInput {
   id: number;
@@ -212,6 +220,374 @@ export async function topUp(userId: number, amountMinor: number) {
     description: "Wallet top-up",
   });
   return u.balanceMinor + amountMinor;
+}
+
+/**
+ * Creates a pending order and initiates a Sterling Pay / Corefy HPP payment invoice.
+ * Customer will be redirected to the returned hppUrl.
+ */
+export async function createPendingCardOrder(userId: number, cart: CartInput[]) {
+  await ensureDb();
+  await ensurePaymentInvoicesTable();
+
+  const ids = cart.map((c) => c.id);
+  if (!ids.length) throw new Error("Cart is empty");
+
+  const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  if (!user) throw new Error("User not found");
+  if (!user.steamId || !user.steamTradeToken) throw new SteamNotLinkedError();
+
+  const rows = await db.select().from(items).where(inArray(items.id, ids));
+  const byId = new Map(rows.map((r) => [r.id, r]));
+
+  const lines = cart
+    .map((c) => {
+      const it = byId.get(c.id);
+      if (!it) return null;
+      return { item: it, quantity: Math.max(1, c.quantity) };
+    })
+    .filter(Boolean) as { item: schema.Item; quantity: number }[];
+
+  if (!lines.length) throw new Error("No valid items in cart");
+
+  const subtotalMinor = lines.reduce(
+    (s, l) => s + l.item.priceMinor * l.quantity,
+    0
+  );
+  const feeMinor = VALUES.serviceFeeMinor;
+  const totalMinor = subtotalMinor + feeMinor;
+
+  const reference = makeReference();
+
+  const [order] = await db
+    .insert(orders)
+    .values({
+      reference,
+      userId,
+      status: "pending",
+      subtotalMinor,
+      feeMinor,
+      totalMinor,
+      currency: "USD",
+      steamId: user.steamId,
+      sihStatus: "pending_payment",
+    })
+    .returning();
+
+  const insertedLines: (typeof schema.orderItems.$inferInsert)[] = [];
+  for (const l of lines) {
+    for (let unit = 0; unit < l.quantity; unit++) {
+      insertedLines.push({
+        orderId: order.id,
+        itemId: l.item.id,
+        name: l.item.name,
+        unitPriceMinor: l.item.priceMinor,
+        quantity: 1,
+        marketHashName: l.item.marketHashName,
+        sihStatus: "pending_payment",
+      });
+    }
+  }
+  await db.insert(orderItems).values(insertedLines);
+
+  const config = getCorefyConfig();
+  const payCurrency = config.currency as CurrencyCode;
+  const payAmount = Number(convertFromMinor(totalMinor, payCurrency).toFixed(2));
+
+  const invoice = await createCorefyPaymentInvoice({
+    referenceId: reference,
+    amount: payAmount,
+    currency: payCurrency,
+    description: `rust-skins.com order ${reference}`,
+    customer: user,
+    metadata: {
+      type: "checkout",
+      orderId: order.id,
+      userId,
+    },
+  });
+
+  await db.insert(paymentInvoices).values({
+    referenceId: reference,
+    corefyInvoiceId: invoice.invoiceId,
+    userId,
+    type: "checkout",
+    orderId: order.id,
+    amountMinor: totalMinor,
+    payAmount: String(payAmount),
+    payCurrency,
+    status: "pending",
+    hppUrl: invoice.hppUrl,
+    customerEmail: user.email,
+  });
+
+  return {
+    reference,
+    orderId: order.id,
+    hppUrl: invoice.hppUrl,
+    totalMinor,
+  };
+}
+
+/**
+ * Creates a wallet top-up payment invoice via Sterling Pay / Corefy HPP.
+ */
+export async function createWalletTopupInvoice(
+  userId: number,
+  amount: number,
+  currency: CurrencyCode
+) {
+  await ensureDb();
+  await ensurePaymentInvoicesTable();
+
+  const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  if (!user) throw new Error("User not found");
+
+  const amountMinor = toGbpMinor(amount, currency);
+  if (!Number.isFinite(amountMinor) || amountMinor <= 0) {
+    throw new Error("Enter a valid amount");
+  }
+
+  const rnd = Math.random().toString(36).slice(2, 7).toUpperCase();
+  const stamp = Date.now().toString(36).slice(-4).toUpperCase();
+  const reference = `TOPUP-${stamp}${rnd}`;
+
+  const payAmount = Number(amount.toFixed(2));
+  const invoice = await createCorefyPaymentInvoice({
+    referenceId: reference,
+    amount: payAmount,
+    currency,
+    description: `rust-skins.com wallet top-up`,
+    customer: user,
+    metadata: {
+      type: "wallet_topup",
+      userId,
+      amountMinor,
+    },
+  });
+
+  await db.insert(paymentInvoices).values({
+    referenceId: reference,
+    corefyInvoiceId: invoice.invoiceId,
+    userId,
+    type: "wallet_topup",
+    amountMinor,
+    payAmount: String(payAmount),
+    payCurrency: currency,
+    status: "pending",
+    hppUrl: invoice.hppUrl,
+    customerEmail: user.email,
+  });
+
+  return {
+    reference,
+    hppUrl: invoice.hppUrl,
+  };
+}
+
+/**
+ * Dispatches items to SIH market and marks order as paid once payment is confirmed.
+ */
+export async function completePaidOrder(orderId: number) {
+  await ensureDb();
+  const [order] = await db.select().from(orders).where(eq(orders.id, orderId)).limit(1);
+  if (!order) return null;
+
+  if (order.status === "paid" && order.sihStatus && order.sihStatus !== "pending_payment") {
+    return order; // already processed
+  }
+
+  const [user] = await db.select().from(users).where(eq(users.id, order.userId)).limit(1);
+  if (!user) return null;
+
+  await db.update(orders).set({ status: "paid" }).where(eq(orders.id, order.id));
+
+  const lines = await db
+    .select()
+    .from(orderItems)
+    .where(eq(orderItems.orderId, order.id));
+
+  const statuses: string[] = [];
+
+  for (const line of lines) {
+    if (line.sihOrderId || line.sihStatus === "created" || line.sihStatus === "sent" || line.sihStatus === "finished") {
+      statuses.push(line.sihStatus || "created");
+      continue;
+    }
+
+    const mhn = line.marketHashName;
+    if (!mhn) {
+      await db
+        .update(orderItems)
+        .set({ sihStatus: "failed", sihError: "Item is not linked to market" })
+        .where(eq(orderItems.id, line.id));
+      statuses.push("failed");
+      continue;
+    }
+
+    try {
+      const min = await getMinItemPrice(mhn);
+      const costUsd = min?.price ?? line.unitPriceMinor / 100;
+      const authorised = buyCeilingUsd(costUsd);
+      const res = await sihCreateOrder({
+        steamId: user.steamId!,
+        token: user.steamTradeToken!,
+        amount: authorised,
+        item: mhn,
+        customId: `${order.reference}-${order.id}-${line.id}`,
+        test: SIH_TEST_MODE,
+      });
+
+      await db
+        .update(orderItems)
+        .set({ sihOrderId: res.id ?? null, sihStatus: "created" })
+        .where(eq(orderItems.id, line.id));
+      statuses.push("created");
+    } catch (e) {
+      const errMsg = e instanceof SihError ? e.message : "Market order failed";
+      await db
+        .update(orderItems)
+        .set({ sihStatus: "failed", sihError: errMsg })
+        .where(eq(orderItems.id, line.id));
+      statuses.push("failed");
+    }
+  }
+
+  const anyFailed = statuses.includes("failed");
+  const allFailed = statuses.length > 0 && statuses.every((s) => s === "failed");
+  const aggregate = allFailed ? "failed" : anyFailed ? "partial" : "created";
+
+  await db
+    .update(orders)
+    .set({ sihStatus: aggregate, status: allFailed ? "cancelled" : "paid" })
+    .where(eq(orders.id, order.id));
+
+  // Build invoice and email
+  try {
+    const formattedLines = lines.map((l) => ({
+      name: l.quantity > 1 ? `${l.name} × ${l.quantity}` : l.name,
+      price: formatMinor(l.unitPriceMinor * l.quantity, "USD"),
+    }));
+
+    const pdf = await buildInvoicePdf({
+      reference: order.reference,
+      date: new Date(),
+      customer: {
+        name: `${user.firstName} ${user.lastName}`,
+        email: user.email,
+        address: `${user.street}, ${user.city}, ${user.country} ${user.postalCode}`,
+      },
+      lines: formattedLines,
+      subtotal: formatMinor(order.subtotalMinor, "USD"),
+      fee: order.feeMinor ? formatMinor(order.feeMinor, "USD") : undefined,
+      total: formatMinor(order.totalMinor, "USD"),
+      currency: "USD",
+    });
+
+    await sendEmail({
+      to: user.email,
+      subject: `rust-skins.com order ${order.reference} confirmed`,
+      html: orderConfirmationEmail(
+        user.firstName,
+        order.reference,
+        formatMinor(order.totalMinor, "USD"),
+        formattedLines
+      ),
+      attachments: [
+        { filename: `invoice-${order.reference}.pdf`, content: pdf, contentType: "application/pdf" },
+      ],
+    });
+  } catch (e) {
+    console.error("Order invoice generation / email notification failed:", e);
+  }
+
+  return order;
+}
+
+/**
+ * Processes incoming Corefy webhook payload
+ */
+export async function handleCorefyPaymentWebhook(payload: {
+  data?: {
+    id?: string;
+    type?: string;
+    attributes?: {
+      reference_id?: string;
+      amount?: number;
+      processed_amount?: number;
+      currency?: string;
+      status?: string;
+      resolution?: string;
+      test_mode?: boolean;
+    };
+  };
+}) {
+  await ensureDb();
+  await ensurePaymentInvoicesTable();
+
+  const attributes = payload?.data?.attributes;
+  const referenceId = attributes?.reference_id;
+  const status = attributes?.status || "unknown";
+  const resolution = attributes?.resolution || null;
+
+  if (!referenceId) {
+    return { ok: false, error: "Missing reference_id in webhook" };
+  }
+
+  const [invoice] = await db
+    .select()
+    .from(paymentInvoices)
+    .where(eq(paymentInvoices.referenceId, referenceId))
+    .limit(1);
+
+  if (!invoice) {
+    // If not in payment_invoices, check if an order matches reference
+    const [order] = await db
+      .select()
+      .from(orders)
+      .where(eq(orders.reference, referenceId))
+      .limit(1);
+
+    if (order && status === "processed") {
+      await completePaidOrder(order.id);
+    }
+    return { ok: true, reference_id: referenceId };
+  }
+
+  await db
+    .update(paymentInvoices)
+    .set({
+      status,
+      resolution,
+      updatedAt: new Date(),
+    })
+    .where(eq(paymentInvoices.id, invoice.id));
+
+  if (status === "processed") {
+    if (invoice.type === "wallet_topup") {
+      if (invoice.status !== "processed") {
+        await topUp(invoice.userId!, invoice.amountMinor);
+      }
+    } else if (invoice.type === "checkout" && invoice.orderId) {
+      await completePaidOrder(invoice.orderId);
+    }
+  } else if (status === "process_failed") {
+    if (invoice.type === "checkout" && invoice.orderId) {
+      await db
+        .update(orders)
+        .set({ status: "cancelled", sihStatus: "failed" })
+        .where(eq(orders.id, invoice.orderId));
+    }
+  } else if (status === "refunded") {
+    if (invoice.type === "checkout" && invoice.orderId) {
+      await db
+        .update(orders)
+        .set({ status: "refunded" })
+        .where(eq(orders.id, invoice.orderId));
+    }
+  }
+
+  return { ok: true, reference_id: referenceId };
 }
 
 /**
