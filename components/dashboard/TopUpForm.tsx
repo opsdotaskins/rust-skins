@@ -34,10 +34,15 @@ export function TopUpForm() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Top-up failed");
+
+      if (data.hppUrl) {
+        window.location.href = data.hppUrl;
+        return;
+      }
+
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Top-up failed");
-    } finally {
       setSubmitting(false);
     }
   };
@@ -104,7 +109,7 @@ export function TopUpForm() {
       {error && <p className="text-sm text-loss">{error}</p>}
 
       <button type="submit" disabled={submitting || !valid || !agreed} className="btn-gold w-full">
-        {submitting ? "Processing…" : "Add funds"}
+        {submitting ? "Redirecting to payment…" : "Add funds"}
       </button>
 
       <div className="flex items-center justify-between border-t border-hairline pt-4">

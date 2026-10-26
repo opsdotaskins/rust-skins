@@ -236,6 +236,34 @@ export const transactions = pgTable(
   })
 );
 
+// ---------- Corefy / Sterling Pay payment invoices ----------
+export const paymentInvoices = pgTable(
+  "payment_invoices",
+  {
+    id: serial("id").primaryKey(),
+    referenceId: varchar("reference_id", { length: 100 }).notNull(),
+    corefyInvoiceId: varchar("corefy_invoice_id", { length: 100 }),
+    userId: integer("user_id").references(() => users.id, { onDelete: "cascade" }),
+    type: varchar("type", { length: 40 }).notNull().default("checkout"), // checkout | wallet_topup
+    orderId: integer("order_id").references(() => orders.id, { onDelete: "set null" }),
+    amountMinor: integer("amount_minor").notNull().default(0), // base currency USD cents
+    payAmount: varchar("pay_amount", { length: 20 }).notNull(),
+    payCurrency: varchar("pay_currency", { length: 10 }).notNull().default("EUR"),
+    status: varchar("status", { length: 40 }).notNull().default("pending"), // pending | processed | failed | refunded
+    resolution: varchar("resolution", { length: 80 }),
+    hppUrl: text("hpp_url"),
+    customerEmail: varchar("customer_email", { length: 255 }),
+    metadata: text("metadata"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (t) => ({
+    refIdx: uniqueIndex("payment_invoices_ref_idx").on(t.referenceId),
+    corefyIdx: index("payment_invoices_corefy_idx").on(t.corefyInvoiceId),
+    userIdx: index("payment_invoices_user_idx").on(t.userId),
+  })
+);
+
 // ---------- Blog ----------
 export const posts = pgTable(
   "posts",
@@ -294,3 +322,4 @@ export type OrderItem = typeof orderItems.$inferSelect;
 export type Transaction = typeof transactions.$inferSelect;
 export type Post = typeof posts.$inferSelect;
 export type Review = typeof reviews.$inferSelect;
+export type PaymentInvoice = typeof paymentInvoices.$inferSelect;

@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
-import { topUp } from "@/lib/orders";
-import { toGbpMinor, type CurrencyCode } from "@/lib/currency";
+import { createWalletTopupInvoice } from "@/lib/orders";
+import { type CurrencyCode } from "@/lib/currency";
 
 export const runtime = "nodejs";
 
@@ -27,11 +27,22 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Enter a valid amount" }, { status: 400 });
   }
 
-  const gbpMinor = toGbpMinor(parsed.data.amount, parsed.data.currency as CurrencyCode);
-  if (!Number.isFinite(gbpMinor) || gbpMinor <= 0) {
-    return NextResponse.json({ error: "Enter a valid amount" }, { status: 400 });
+  try {
+    const result = await createWalletTopupInvoice(
+      user.id,
+      parsed.data.amount,
+      parsed.data.currency as CurrencyCode
+    );
+    return NextResponse.json({
+      ok: true,
+      reference: result.reference,
+      hppUrl: result.hppUrl,
+    });
+  } catch (err) {
+    console.error("Wallet top-up creation failed:", err);
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Top-up failed" },
+      { status: 500 }
+    );
   }
-
-  const balanceMinor = await topUp(user.id, gbpMinor);
-  return NextResponse.json({ ok: true, balanceMinor });
 }
