@@ -8,6 +8,7 @@ const LINKS = [
   { href: "/dashboard", label: "Overview", exact: true },
   { href: "/dashboard/wallet", label: "Wallet" },
   { href: "/dashboard/orders", label: "Orders & activity" },
+  { href: "/dashboard/steam", label: "Steam account" },
   { href: "/wishlist", label: "Wishlist" },
 ];
 

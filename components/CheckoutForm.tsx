@@ -92,7 +92,7 @@ export function CheckoutForm({
               <p className="mt-1 text-[12px] text-sage">
                 We deliver every item via a Steam trade offer, so we need your Steam account and trade URL first.
               </p>
-              <Link href="/account" className="btn-gold mt-3 inline-flex">Link Steam account</Link>
+              <Link href="/dashboard/steam" className="btn-gold mt-3 inline-flex">Link Steam account</Link>
             </div>
           )}
         </section>

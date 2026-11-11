@@ -9,7 +9,23 @@ import { SITE } from "./config";
 
 const OPENID_ENDPOINT = "https://steamcommunity.com/openid/login";
 const STEAM_API_KEY = process.env.STEAM_API_KEY || "";
-const REALM = SITE.url.replace(/\/$/, "");
+const CANONICAL_ORIGIN = new URL(SITE.url).origin;
+const CALLBACK_PATH = "/api/steam/callback";
+
+/**
+ * Origin Steam should send the user back to. In production this is always the
+ * canonical domain (www.rust-skins.com), never the incoming request host —
+ * otherwise a *.vercel.app or apex request would produce a realm/return_to
+ * pair Steam (and our session cookie) don't recognise. In development the
+ * request origin is used so the flow works on localhost.
+ */
+export function steamOrigin(requestOrigin: string): string {
+  return process.env.NODE_ENV === "production" ? CANONICAL_ORIGIN : requestOrigin;
+}
+
+export function steamCallbackUrl(requestOrigin: string): string {
+  return new URL(CALLBACK_PATH, steamOrigin(requestOrigin)).toString();
+}
 
 /** Build the URL to redirect the user to for Steam sign-in. */
 export function buildLoginUrl(returnTo: string): string {
@@ -17,7 +33,7 @@ export function buildLoginUrl(returnTo: string): string {
     "openid.ns": "http://specs.openid.net/auth/2.0",
     "openid.mode": "checkid_setup",
     "openid.return_to": returnTo,
-    "openid.realm": REALM,
+    "openid.realm": new URL(returnTo).origin,
     "openid.identity": "http://specs.openid.net/auth/2.0/identifier_select",
     "openid.claimed_id": "http://specs.openid.net/auth/2.0/identifier_select",
   });
@@ -30,10 +46,16 @@ const STEAMID_RE = /^https?:\/\/steamcommunity\.com\/openid\/id\/(\d{17})$/;
  * Verify the OpenID assertion returned by Steam. Returns the 64-bit steamId
  * on success, or null if the signature does not check out.
  */
-export async function verifyCallback(query: URLSearchParams): Promise<string | null> {
+export async function verifyCallback(
+  query: URLSearchParams,
+  expectedReturnTo: string
+): Promise<string | null> {
   const claimedId = query.get("openid.claimed_id");
   const match = claimedId ? STEAMID_RE.exec(claimedId) : null;
   if (!match) return null;
+
+  // The assertion must have been issued for our own callback URL.
+  if (query.get("openid.return_to") !== expectedReturnTo) return null;
 
   // Echo every openid.* param back with mode=check_authentication.
   const body = new URLSearchParams();

@@ -23,6 +23,23 @@ export default async function DashboardHome() {
 
   return (
     <div className="space-y-6">
+      {!(user.steamId && user.steamTradeToken) && (
+        <section className="corner-brackets flex flex-col gap-4 rounded-xl border border-gold/25 bg-card p-5 shadow-glow-soft sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="font-display text-lg font-semibold text-parchment">
+              {user.steamId ? "Add your Steam trade URL" : "Link your Steam account"}
+            </h2>
+            <p className="text-sm text-sage">
+              We deliver every skin by Steam trade offer, so link Steam and save your trade URL before checkout.
+            </p>
+          </div>
+          {user.steamId ? (
+            <Link href="/dashboard/steam" className="btn-gold shrink-0 text-sm">Add trade URL</Link>
+          ) : (
+            <a href="/api/steam/login" className="btn-gold shrink-0 text-sm">Sign in through Steam</a>
+          )}
+        </section>
+      )}
       <div className="grid gap-4 sm:grid-cols-3">
         <div className="corner-brackets rounded-xl border border-gold/25 bg-card p-5 shadow-glow-soft">
           <p className="engraved text-[10px] text-sage">Wallet balance</p>

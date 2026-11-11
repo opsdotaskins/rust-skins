@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db, schema, ensureDb } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
-import { verifyCallback, getPlayerSummary } from "@/lib/steam";
+import { verifyCallback, getPlayerSummary, steamCallbackUrl } from "@/lib/steam";
 
 export const runtime = "nodejs";
 
@@ -10,12 +10,12 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const user = await getCurrentUser();
   if (!user) {
-    return NextResponse.redirect(new URL("/login?next=/account", url.origin));
+    return NextResponse.redirect(new URL("/login?next=/dashboard/steam", url.origin));
   }
 
-  const steamId = await verifyCallback(url.searchParams);
+  const steamId = await verifyCallback(url.searchParams, steamCallbackUrl(url.origin));
   if (!steamId) {
-    return NextResponse.redirect(new URL("/account?steam=error", url.origin));
+    return NextResponse.redirect(new URL("/dashboard/steam?steam=error", url.origin));
   }
 
   const profile = await getPlayerSummary(steamId);
@@ -30,5 +30,5 @@ export async function GET(request: Request) {
     })
     .where(eq(schema.users.id, user.id));
 
-  return NextResponse.redirect(new URL("/account?steam=linked", url.origin));
+  return NextResponse.redirect(new URL("/dashboard/steam?steam=linked", url.origin));
 }
