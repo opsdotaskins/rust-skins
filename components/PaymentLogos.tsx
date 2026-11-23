@@ -1,11 +1,9 @@
 import Image from "next/image";
 
-/** Full-colour Visa, Mastercard and 3D Secure marks (+ PCI DSS in the footer). Never greyscale. */
+/** Full-colour Visa and Mastercard marks (+ PCI DSS in the footer). Never greyscale. */
 const MARKS = [
   { src: "/payments/visa.svg", label: "Visa", width: 2501, height: 1384, h: "h-5" },
   { src: "/payments/mastercard.svg", label: "Mastercard", width: 2501, height: 1384, h: "h-5" },
-  // Square shield: a touch taller so "3D SECURE" stays legible in the same pill.
-  { src: "/payments/3ds.svg", label: "3D Secure", width: 404, height: 440, h: "h-6" },
 ] as const;
 
 const PCI_DSS = { src: "/payments/pci-dss.svg", label: "PCI DSS Compliant", width: 2501, height: 1384, h: "h-5" } as const;

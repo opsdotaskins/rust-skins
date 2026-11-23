@@ -11,7 +11,13 @@ import {
 } from "./sih";
 import { convertFromMinor, formatMinor, toGbpMinor, type CurrencyCode } from "./currency";
 import { buildInvoicePdf } from "./invoice";
-import { sendEmail, orderConfirmationEmail } from "./email";
+import {
+  sendEmail,
+  orderConfirmationEmail,
+  topUpReceiptEmail,
+  paymentFailedEmail,
+  refundEmail,
+} from "./email";
 import {
   createCorefyPaymentInvoice,
   ensurePaymentInvoicesTable,
@@ -204,7 +210,7 @@ export async function createOrder(
   };
 }
 
-export async function topUp(userId: number, amountMinor: number) {
+export async function topUp(userId: number, amountMinor: number, reference?: string) {
   if (amountMinor <= 0) throw new Error("Invalid amount");
   await ensureDb();
   const [u] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
@@ -219,7 +225,52 @@ export async function topUp(userId: number, amountMinor: number) {
     amountMinor,
     description: "Wallet top-up",
   });
-  return u.balanceMinor + amountMinor;
+  const newBalance = u.balanceMinor + amountMinor;
+
+  // Receipt email with a PDF invoice. Never fail the top-up because of email.
+  try {
+    const ref = reference ?? `TOPUP-${userId}-${Date.now().toString(36).toUpperCase()}`;
+    const amount = formatMinor(amountMinor, "USD");
+    const pdf = await buildInvoicePdf({
+      reference: ref,
+      date: new Date(),
+      customer: {
+        name: `${u.firstName} ${u.lastName}`,
+        email: u.email,
+        address: `${u.street}, ${u.city}, ${u.country} ${u.postalCode}`,
+      },
+      lines: [{ name: "rust-skins.com wallet top-up", price: amount }],
+      subtotal: amount,
+      total: amount,
+      currency: "USD",
+    });
+    await sendEmail({
+      to: u.email,
+      subject: `rust-skins.com wallet top-up ${ref}`,
+      html: topUpReceiptEmail(u.firstName, ref, amount, formatMinor(newBalance, "USD")),
+      attachments: [{ filename: `receipt-${ref}.pdf`, content: pdf, contentType: "application/pdf" }],
+    });
+  } catch (e) {
+    console.error("Top-up receipt email failed:", e);
+  }
+  return newBalance;
+}
+
+/** Email the order's customer; failures are logged, never thrown. */
+async function notifyOrderCustomer(orderId: number, build: (name: string, reference: string, total: string) => { subject: string; html: string }) {
+  try {
+    const [row] = await db
+      .select({ reference: orders.reference, totalMinor: orders.totalMinor, email: users.email, firstName: users.firstName })
+      .from(orders)
+      .innerJoin(users, eq(orders.userId, users.id))
+      .where(eq(orders.id, orderId))
+      .limit(1);
+    if (!row) return;
+    const { subject, html } = build(row.firstName, row.reference, formatMinor(row.totalMinor, "USD"));
+    await sendEmail({ to: row.email, subject, html });
+  } catch (e) {
+    console.error("Order notification email failed:", e);
+  }
 }
 
 /**
@@ -566,24 +617,32 @@ export async function handleCorefyPaymentWebhook(payload: {
   if (status === "processed") {
     if (invoice.type === "wallet_topup") {
       if (invoice.status !== "processed") {
-        await topUp(invoice.userId!, invoice.amountMinor);
+        await topUp(invoice.userId!, invoice.amountMinor, referenceId);
       }
     } else if (invoice.type === "checkout" && invoice.orderId) {
       await completePaidOrder(invoice.orderId);
     }
   } else if (status === "process_failed") {
-    if (invoice.type === "checkout" && invoice.orderId) {
+    if (invoice.type === "checkout" && invoice.orderId && invoice.status !== "process_failed") {
       await db
         .update(orders)
         .set({ status: "cancelled", sihStatus: "failed" })
         .where(eq(orders.id, invoice.orderId));
+      await notifyOrderCustomer(invoice.orderId, (name, ref) => ({
+        subject: `rust-skins.com order ${ref}: payment not completed`,
+        html: paymentFailedEmail(name, ref),
+      }));
     }
   } else if (status === "refunded") {
-    if (invoice.type === "checkout" && invoice.orderId) {
+    if (invoice.type === "checkout" && invoice.orderId && invoice.status !== "refunded") {
       await db
         .update(orders)
         .set({ status: "refunded" })
         .where(eq(orders.id, invoice.orderId));
+      await notifyOrderCustomer(invoice.orderId, (name, ref, total) => ({
+        subject: `rust-skins.com order ${ref}: refund issued`,
+        html: refundEmail(name, ref, total),
+      }));
     }
   }
 

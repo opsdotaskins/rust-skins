@@ -110,6 +110,37 @@ export function orderConfirmationEmail(
   );
 }
 
+export function topUpReceiptEmail(name: string, reference: string, amount: string, balance: string) {
+  return shell(
+    "Wallet top-up received",
+    `<h1 style="font-size:20px;margin:0 0 12px">Top-up received</h1>
+     <p style="color:#8FA093;margin:0 0 20px">Hi ${escapeHtml(name)}, your rust-skins.com wallet has been topped up. Your receipt is attached as a PDF.</p>
+     <table role="presentation" width="100%" style="border-collapse:collapse;font-size:14px">
+       <tr><td style="padding:8px 0;border-bottom:1px solid #25382E">Reference</td><td style="padding:8px 0;border-bottom:1px solid #25382E;text-align:right;font-family:monospace">${escapeHtml(reference)}</td></tr>
+       <tr><td style="padding:8px 0;border-bottom:1px solid #25382E">Amount added</td><td style="padding:8px 0;border-bottom:1px solid #25382E;text-align:right;font-family:monospace;color:#E8B44A">${amount}</td></tr>
+       <tr><td style="padding:12px 0;font-weight:700">New balance</td><td style="padding:12px 0;text-align:right;font-family:monospace;font-weight:700;color:#E8B44A">${balance}</td></tr>
+     </table>
+     <p style="color:#8FA093;font-size:13px;margin-top:20px">Unused paid balance can be refunded on request — see our Account Balance policy.</p>`
+  );
+}
+
+export function paymentFailedEmail(name: string, reference: string) {
+  return shell(
+    `Payment for order ${reference} was not completed`,
+    `<h1 style="font-size:20px;margin:0 0 12px">Payment not completed</h1>
+     <p style="color:#8FA093;margin:0 0 20px">Hi ${escapeHtml(name)}, the card payment for order <span style="font-family:monospace;color:#EFEAD8">${escapeHtml(reference)}</span> was declined or cancelled, so the order has been cancelled and you have not been charged.</p>
+     <p><a href="${SITE.url}/cart" style="display:inline-block;background:#E8B44A;color:#0B1512;font-weight:700;text-decoration:none;padding:12px 22px;border-radius:8px">Try again</a></p>`
+  );
+}
+
+export function refundEmail(name: string, reference: string, amount: string) {
+  return shell(
+    `Refund for order ${reference}`,
+    `<h1 style="font-size:20px;margin:0 0 12px">Refund issued</h1>
+     <p style="color:#8FA093;margin:0 0 20px">Hi ${escapeHtml(name)}, we have refunded <span style="font-family:monospace;color:#E8B44A">${amount}</span> for order <span style="font-family:monospace;color:#EFEAD8">${escapeHtml(reference)}</span> to your original payment method. Depending on your bank it can take 5–10 business days to appear.</p>`
+  );
+}
+
 function escapeHtml(s: string) {
   return s.replace(/[&<>"']/g, (c) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]!)
