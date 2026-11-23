@@ -80,7 +80,7 @@ export function Footer() {
               <a href={`mailto:${CONTACT_EMAIL}`} className="hover:text-gold">{CONTACT_EMAIL}</a>
             </p>
           </div>
-          <PaymentLogos />
+          <PaymentLogos withPciDss />
         </div>
 
         <div className="mt-8 space-y-3 border-t border-hairline pt-6 text-xs text-sage/80">
