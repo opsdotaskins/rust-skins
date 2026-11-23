@@ -295,7 +295,7 @@ function MiniCart() {
 
 function MegaPanel({ group, onNavigate }: { group: (typeof NAV)[number]; onNavigate: () => void }) {
   return (
-    <div className="absolute left-0 right-0 top-full z-40 border-y border-hairline bg-panel/98 shadow-relic backdrop-blur">
+    <div className="absolute left-0 right-0 top-full z-40 border-y border-hairline bg-panel shadow-relic backdrop-blur">
       <div className="mx-auto grid max-w-7xl grid-cols-4 gap-6 px-4 py-6">
         <div className="col-span-2">
           <p className="engraved mb-3 text-[10px] text-sage">{group.label}</p>

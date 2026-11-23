@@ -30,7 +30,7 @@ export function CookieConsent() {
   if (!visible) return null;
 
   return (
-    <div role="dialog" aria-label="Cookie notice" className="fixed inset-x-0 bottom-0 z-50 border-t border-gold/20 bg-panel/98 backdrop-blur">
+    <div role="dialog" aria-label="Cookie notice" className="fixed inset-x-0 bottom-0 z-50 border-t border-gold/20 bg-panel backdrop-blur">
       <div className="mx-auto flex max-w-5xl flex-col gap-4 px-4 py-5 sm:flex-row sm:items-center">
         <div className="flex-1 text-sm text-sage">
           <p className="mb-1 font-semibold text-parchment">Cookies and browser storage</p>
