@@ -10,7 +10,9 @@ export const metadata: Metadata = {
 
 export default async function DealsPage() {
   const all = await getCatalog({ sort: "price-desc" });
-  const deals = all.filter((i) => i.oldPriceMinor && i.oldPriceMinor > i.priceMinor);
+  const deals = all
+    .filter((i) => i.oldPriceMinor && i.oldPriceMinor > i.priceMinor)
+    .slice(0, 48);
   return (
     <div className="mx-auto max-w-7xl px-4 py-10">
       <header className="mb-8">

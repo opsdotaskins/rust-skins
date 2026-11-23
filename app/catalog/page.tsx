@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { getCatalog, getCategories } from "@/lib/queries";
 import { CatalogFilters } from "@/components/CatalogFilters";
 import { CatalogToolbar } from "@/components/CatalogToolbar";
@@ -14,6 +15,19 @@ export const metadata: Metadata = {
 };
 
 type SP = Record<string, string | string[] | undefined>;
+
+const PAGE_SIZE = 48;
+
+function pageHref(sp: SP, page: number) {
+  const next = new URLSearchParams();
+  for (const [k, v] of Object.entries(sp)) {
+    const val = str(v);
+    if (val && k !== "page") next.set(k, val);
+  }
+  if (page > 1) next.set("page", String(page));
+  const qs = next.toString();
+  return qs ? `/catalog?${qs}` : "/catalog";
+}
 
 function str(v: string | string[] | undefined) {
   return Array.isArray(v) ? v[0] : v;
@@ -39,10 +53,13 @@ export default async function CatalogPage({
     sort: (str(sp.sort) as Filters["sort"]) ?? "popular",
   };
 
-  const [items, categories] = await Promise.all([
+  const [allItems, categories] = await Promise.all([
     getCatalog(filters),
     getCategories(),
   ]);
+  const pageCount = Math.max(1, Math.ceil(allItems.length / PAGE_SIZE));
+  const page = Math.min(pageCount, Math.max(1, Number(str(sp.page)) || 1));
+  const items = allItems.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-10">
@@ -64,8 +81,25 @@ export default async function CatalogPage({
         </aside>
 
         <section>
-          <CatalogToolbar count={items.length} />
+          <CatalogToolbar count={allItems.length} />
           <ItemGrid items={items} />
+          {pageCount > 1 && (
+            <nav aria-label="Catalog pages" className="mt-10 flex items-center justify-center gap-3 text-sm">
+              {page > 1 ? (
+                <Link href={pageHref(sp, page - 1)} className="btn-ghost text-sm">← Previous</Link>
+              ) : (
+                <span className="btn-ghost pointer-events-none text-sm opacity-40">← Previous</span>
+              )}
+              <span className="text-sage">
+                Page <span className="text-parchment">{page}</span> of {pageCount}
+              </span>
+              {page < pageCount ? (
+                <Link href={pageHref(sp, page + 1)} className="btn-ghost text-sm">Next →</Link>
+              ) : (
+                <span className="btn-ghost pointer-events-none text-sm opacity-40">Next →</span>
+              )}
+            </nav>
+          )}
         </section>
       </div>
     </div>

@@ -19,6 +19,7 @@ export function CatalogFilters({
   const setParam = useCallback(
     (key: string, value: string | null) => {
       const next = new URLSearchParams(params.toString());
+      next.delete("page");
       if (value === null || value === "") next.delete(key);
       else next.set(key, value);
       router.push(`${pathname}?${next.toString()}`, { scroll: false });

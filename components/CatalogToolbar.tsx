@@ -36,12 +36,13 @@ export function CatalogToolbar({ count }: { count: number }) {
     } else {
       next.delete(key);
     }
+    next.delete("page");
     router.push(`${pathname}?${next.toString()}`, { scroll: false });
   };
 
   const chips: { key: string; value?: string; label: string }[] = [];
   params.forEach((value, key) => {
-    if (key === "sort") return;
+    if (key === "sort" || key === "page") return;
     if (key === "rarity") {
       value.split(",").filter(Boolean).forEach((r) =>
         chips.push({ key: "rarity", value: r, label: RARITY_META[r as Rarity]?.label ?? r })
@@ -54,6 +55,7 @@ export function CatalogToolbar({ count }: { count: number }) {
   const setSort = (v: string) => {
     const next = new URLSearchParams(params.toString());
     v ? next.set("sort", v) : next.delete("sort");
+    next.delete("page");
     router.push(`${pathname}?${next.toString()}`, { scroll: false });
   };
 

@@ -1,9 +1,11 @@
 import Image from "next/image";
 
-/** Full-colour Visa and Mastercard marks. Never greyscale. */
+/** Full-colour Visa, Mastercard and 3D Secure marks. Never greyscale. */
 const MARKS = [
-  { src: "/payments/visa.svg", label: "Visa" },
-  { src: "/payments/mastercard.svg", label: "Mastercard" },
+  { src: "/payments/visa.svg", label: "Visa", width: 2501, height: 1384, h: "h-5" },
+  { src: "/payments/mastercard.svg", label: "Mastercard", width: 2501, height: 1384, h: "h-5" },
+  // Square shield: a touch taller so "3D SECURE" stays legible in the same pill.
+  { src: "/payments/3ds.svg", label: "3D Secure", width: 404, height: 440, h: "h-6" },
 ] as const;
 
 export function PaymentLogos({ className = "" }: { className?: string }) {
@@ -17,9 +19,9 @@ export function PaymentLogos({ className = "" }: { className?: string }) {
           <Image
             src={m.src}
             alt={m.label}
-            width={2501}
-            height={1384}
-            className="h-5 w-auto"
+            width={m.width}
+            height={m.height}
+            className={`${m.h} w-auto`}
           />
         </span>
       ))}

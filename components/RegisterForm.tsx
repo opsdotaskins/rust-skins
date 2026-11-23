@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { COUNTRIES, MIN_AGE, PHONE_HINT } from "@/lib/config";
+import { SteamSignInButton, AuthDivider } from "@/components/auth/SteamSignInButton";
 
 type Fields = {
   email: string;
@@ -25,7 +26,11 @@ const EMPTY: Fields = {
   dateOfBirth: "", street: "", city: "", country: "United Kingdom", postalCode: "",
 };
 
-export function RegisterForm() {
+export function RegisterForm({
+  steam = null,
+}: {
+  steam?: { name: string | null; avatar: string | null } | null;
+}) {
   const router = useRouter();
   const [step, setStep] = useState(0);
   const [fields, setFields] = useState<Fields>(EMPTY);
@@ -122,6 +127,22 @@ export function RegisterForm() {
       <div className="card-surface p-6">
         {step === 0 && (
           <div className="space-y-4">
+            {steam ? (
+              <div className="flex items-center gap-3 rounded-lg border border-profit/30 bg-profit/10 px-4 py-3 text-sm text-parchment">
+                {steam.avatar && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={steam.avatar} alt="" className="h-8 w-8 rounded-full" />
+                )}
+                <span>
+                  Steam account <strong>{steam.name ?? "verified"}</strong> will be linked to your new account.
+                </span>
+              </div>
+            ) : (
+              <>
+                <SteamSignInButton label="Sign up with Steam" />
+                <AuthDivider />
+              </>
+            )}
             <Input label="Email" type="email" value={fields.email} onChange={(v) => set("email", v)} error={errors.email} autoComplete="email" />
             <Input label="Password" type="password" value={fields.password} onChange={(v) => set("password", v)} error={errors.password} hint="At least 8 characters, one uppercase letter and one number." autoComplete="new-password" />
           </div>

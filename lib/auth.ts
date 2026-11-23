@@ -74,3 +74,54 @@ export function randomToken(bytes = 32) {
   crypto.getRandomValues(arr);
   return Array.from(arr, (b) => b.toString(16).padStart(2, "0")).join("");
 }
+
+// ---------- Pending Steam sign-in ----------
+// A visitor who signs in with a Steam account that is not linked to any
+// rust-skins.com account yet: we keep the verified SteamID in a short-lived
+// signed cookie, send them to /register, and link it when the account is made.
+
+const PENDING_STEAM_COOKIE = "rv_pending_steam";
+
+export interface PendingSteam {
+  steamId: string;
+  steamName: string | null;
+  steamAvatar: string | null;
+}
+
+export async function setPendingSteam(p: PendingSteam) {
+  const token = await new SignJWT({ ...p, kind: "pending-steam" })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime("30m")
+    .sign(secret);
+  const store = await cookies();
+  store.set(PENDING_STEAM_COOKIE, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 60 * 30,
+  });
+}
+
+export async function getPendingSteam(): Promise<PendingSteam | null> {
+  const store = await cookies();
+  const token = store.get(PENDING_STEAM_COOKIE)?.value;
+  if (!token) return null;
+  try {
+    const { payload } = await jwtVerify(token, secret);
+    if (payload.kind !== "pending-steam" || typeof payload.steamId !== "string") return null;
+    return {
+      steamId: payload.steamId,
+      steamName: (payload.steamName as string | null) ?? null,
+      steamAvatar: (payload.steamAvatar as string | null) ?? null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function clearPendingSteam() {
+  const store = await cookies();
+  store.delete(PENDING_STEAM_COOKIE);
+}

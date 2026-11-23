@@ -16,12 +16,15 @@ interface SendArgs {
 }
 
 function getTransport() {
-  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS } = process.env;
+  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_SECURE } = process.env;
+  // SMTP_PASSWORD is accepted as an alias (naming used by sibling stores).
+  const SMTP_PASS = process.env.SMTP_PASS || process.env.SMTP_PASSWORD;
   if (!SMTP_HOST) return null;
+  const port = Number(SMTP_PORT || 587);
   return nodemailer.createTransport({
     host: SMTP_HOST,
-    port: Number(SMTP_PORT || 587),
-    secure: Number(SMTP_PORT) === 465,
+    port,
+    secure: SMTP_SECURE ? SMTP_SECURE === "true" : port === 465,
     auth: SMTP_USER ? { user: SMTP_USER, pass: SMTP_PASS } : undefined,
   });
 }
@@ -31,6 +34,9 @@ export async function sendEmail({ to, subject, html, attachments }: SendArgs) {
   const transport = getTransport();
   if (!transport) {
     // Dev fallback: no SMTP configured — log instead of failing.
+    if (process.env.NODE_ENV === "production") {
+      console.error(`[email] SMTP_HOST is not configured — "${subject}" to ${to} was NOT sent`);
+    }
     console.log("\n──── EMAIL (dev, not sent) ────");
     console.log("To:", to);
     console.log("Subject:", subject);

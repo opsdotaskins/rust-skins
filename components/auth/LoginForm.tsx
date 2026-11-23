@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { SteamSignInButton, AuthDivider } from "./SteamSignInButton";
 
 export function LoginForm() {
   const router = useRouter();
@@ -10,7 +11,9 @@ export function LoginForm() {
   const next = params.get("next") || "/dashboard";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(
+    params.get("steam") === "error" ? "Steam sign-in could not be verified. Please try again." : null
+  );
   const [submitting, setSubmitting] = useState(false);
 
   const submit = async (e: React.FormEvent) => {
@@ -35,6 +38,8 @@ export function LoginForm() {
 
   return (
     <form onSubmit={submit} className="card-surface space-y-4 p-6">
+      <SteamSignInButton />
+      <AuthDivider />
       <label className="block">
         <span className="engraved mb-1 block text-[9px] text-sage">Email</span>
         <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="field" autoComplete="email" required />

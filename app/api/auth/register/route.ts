@@ -2,7 +2,13 @@ import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { db, schema, ensureDb } from "@/lib/db";
 import { registerSchema } from "@/lib/validation";
-import { hashPassword, createSession, randomToken } from "@/lib/auth";
+import {
+  hashPassword,
+  createSession,
+  randomToken,
+  getPendingSteam,
+  clearPendingSteam,
+} from "@/lib/auth";
 import { sendEmail, registrationConfirmationEmail } from "@/lib/email";
 import { SITE } from "@/lib/config";
 
@@ -32,6 +38,24 @@ export async function POST(request: Request) {
     );
   }
 
+  // Visitor came from "Sign in with Steam" with a SteamID not linked yet.
+  const pendingSteam = await getPendingSteam();
+  let steamFields = {};
+  if (pendingSteam) {
+    const [taken] = await db
+      .select({ id: schema.users.id })
+      .from(schema.users)
+      .where(eq(schema.users.steamId, pendingSteam.steamId))
+      .limit(1);
+    if (!taken) {
+      steamFields = {
+        steamId: pendingSteam.steamId,
+        steamName: pendingSteam.steamName,
+        steamAvatar: pendingSteam.steamAvatar,
+      };
+    }
+  }
+
   const passwordHash = await hashPassword(data.password);
   const [user] = await db
     .insert(schema.users)
@@ -46,6 +70,7 @@ export async function POST(request: Request) {
       city: data.city,
       country: data.country,
       postalCode: data.postalCode,
+      ...steamFields,
     })
     .returning();
 
@@ -65,6 +90,7 @@ export async function POST(request: Request) {
     html: registrationConfirmationEmail(user.firstName, verifyUrl),
   }).catch((e) => console.error("Registration email failed:", e));
 
+  if (pendingSteam) await clearPendingSteam();
   await createSession({ userId: user.id, email: user.email });
   return NextResponse.json({ ok: true });
 }

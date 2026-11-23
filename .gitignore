@@ -12,3 +12,6 @@ next-env.d.ts
 .DS_Store
 .idea
 /drizzle/meta
+
+# Steam market crawl cache (scripts/import-rust-skins.ts)
+scripts/.cache/

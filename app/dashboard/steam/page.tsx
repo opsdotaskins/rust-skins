@@ -23,6 +23,11 @@ export default async function DashboardSteamPage({
           Steam account linked successfully.
         </p>
       )}
+      {steam === "taken" && (
+        <p className="rounded-md border border-loss/30 bg-loss/10 px-4 py-2 text-sm text-loss">
+          This Steam account is already linked to another rust-skins.com account.
+        </p>
+      )}
       {steam === "error" && (
         <p className="rounded-md border border-loss/30 bg-loss/10 px-4 py-2 text-sm text-loss">
           Steam sign-in could not be verified. Please try again.
