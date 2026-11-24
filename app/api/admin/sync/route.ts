@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { syncPrices } from "@/lib/catalog-sync";
 import { importMissingItems } from "@/lib/catalog-import";
+import { invalidateCatalogCache } from "@/lib/queries";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -20,6 +21,7 @@ export async function GET(request: Request) {
   try {
     const imported = url.searchParams.get("import") === "1" ? await importMissingItems() : null;
     const result = await syncPrices();
+    invalidateCatalogCache();
     return NextResponse.json({ ok: true, ...result, imported });
   } catch (e) {
     return NextResponse.json(

@@ -1,6 +1,6 @@
 import "server-only";
 import { db, schema, ensureDb } from "./db";
-import { and, asc, desc, eq, gte, inArray, lte, sql, or, ilike } from "drizzle-orm";
+import { asc, desc, eq, inArray } from "drizzle-orm";
 import type { Rarity } from "./rarity";
 
 const { items, heroes, categories, posts, reviews } = schema;
@@ -60,93 +60,145 @@ function withRefsSelect() {
     .innerJoin(categories, eq(items.categoryId, categories.id));
 }
 
-export async function getCatalog(filters: CatalogFilters): Promise<ItemWithRefs[]> {
-  await ensureDb();
-  const conds = [];
-  if (filters.hero) conds.push(eq(heroes.slug, filters.hero));
-  if (filters.attribute)
-    conds.push(eq(heroes.attribute, filters.attribute as schema.Hero["attribute"]));
-  if (filters.category) conds.push(eq(categories.slug, filters.category));
-  if (filters.slot) conds.push(eq(items.slot, filters.slot));
-  if (filters.rarities?.length)
-    conds.push(inArray(items.rarity, filters.rarities));
-  if (filters.quality) conds.push(eq(items.quality, filters.quality as schema.Item["quality"]));
-  if (filters.minGbpMinor != null) conds.push(gte(items.priceMinor, filters.minGbpMinor));
-  if (filters.maxGbpMinor != null) conds.push(lte(items.priceMinor, filters.maxGbpMinor));
-  if (filters.q)
-    conds.push(
-      or(ilike(items.name, `%${filters.q}%`), ilike(heroes.name, `%${filters.q}%`))!
-    );
+/**
+ * The whole catalogue is read once per server instance and kept in memory for
+ * CATALOG_TTL_MS. Every list (home, catalogue, deals, item pages) filters this
+ * snapshot instead of pulling thousands of rows from Postgres on each request,
+ * which is what exhausted the Neon data-transfer quota.
+ */
+const CATALOG_TTL_MS = 5 * 60 * 1000;
 
-  let rows = await withRefsSelect().where(conds.length ? and(...conds) : undefined);
+interface Snapshot {
+  at: number;
+  items: ItemWithRefs[];
+  heroAttr: Map<number, string>;
+}
+
+let snapshot: Snapshot | null = null;
+let inflight: Promise<Snapshot> | null = null;
+
+async function loadSnapshot(): Promise<Snapshot> {
+  await ensureDb();
+  const [rows, heroRows] = await Promise.all([
+    withRefsSelect(),
+    db.select({ id: heroes.id, attribute: heroes.attribute }).from(heroes),
+  ]);
+  return {
+    at: Date.now(),
+    items: rows as ItemWithRefs[],
+    heroAttr: new Map(heroRows.map((h) => [h.id, String(h.attribute)])),
+  };
+}
+
+async function getSnapshot(): Promise<Snapshot> {
+  if (snapshot && Date.now() - snapshot.at < CATALOG_TTL_MS) return snapshot;
+  if (!inflight) {
+    inflight = loadSnapshot()
+      .then((s) => (snapshot = s))
+      .catch((e) => {
+        // Serve the last good copy rather than failing the page.
+        if (snapshot) return snapshot;
+        throw e;
+      })
+      .finally(() => {
+        inflight = null;
+      });
+  }
+  return inflight;
+}
+
+/** Drop the cached catalogue (after imports or price syncs). */
+export function invalidateCatalogCache() {
+  snapshot = null;
+}
+
+async function allItems(): Promise<ItemWithRefs[]> {
+  return (await getSnapshot()).items;
+}
+
+const byPopularity = (a: ItemWithRefs, b: ItemWithRefs) => b.popularity - a.popularity;
+
+export async function getCatalog(filters: CatalogFilters): Promise<ItemWithRefs[]> {
+  const { items: all, heroAttr } = await getSnapshot();
+  const q = filters.q?.toLowerCase();
+  const rarities = filters.rarities?.length ? new Set<string>(filters.rarities) : null;
+
+  const rows = all.filter((r) => {
+    if (filters.hero && r.heroSlug !== filters.hero) return false;
+    if (filters.attribute && (r.heroId == null || heroAttr.get(r.heroId) !== filters.attribute)) return false;
+    if (filters.category && r.categorySlug !== filters.category) return false;
+    if (filters.slot && r.slot !== filters.slot) return false;
+    if (rarities && !rarities.has(r.rarity)) return false;
+    if (filters.quality && r.quality !== filters.quality) return false;
+    if (filters.minGbpMinor != null && r.priceMinor < filters.minGbpMinor) return false;
+    if (filters.maxGbpMinor != null && r.priceMinor > filters.maxGbpMinor) return false;
+    if (q && !r.name.toLowerCase().includes(q) && !(r.heroName ?? "").toLowerCase().includes(q)) return false;
+    return true;
+  });
 
   switch (filters.sort) {
     case "price-asc": rows.sort((a, b) => a.priceMinor - b.priceMinor); break;
     case "price-desc": rows.sort((a, b) => b.priceMinor - a.priceMinor); break;
     case "newest": rows.sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt)); break;
     case "rarity": rows.sort((a, b) => RARITY_RANK[b.rarity] - RARITY_RANK[a.rarity]); break;
-    default: rows.sort((a, b) => b.popularity - a.popularity);
+    default: rows.sort(byPopularity);
   }
-  return rows as ItemWithRefs[];
+  return rows;
 }
 
 export async function getItemBySlug(slug: string): Promise<ItemWithRefs | null> {
-  await ensureDb();
-  const rows = await withRefsSelect().where(eq(items.slug, slug)).limit(1);
-  return (rows[0] as ItemWithRefs) ?? null;
+  return (await allItems()).find((r) => r.slug === slug) ?? null;
 }
 
 export async function getFeatured(limit = 8) {
-  await ensureDb();
-  const rows = await withRefsSelect().where(eq(items.featured, true));
-  return (rows as ItemWithRefs[]).sort((a, b) => b.popularity - a.popularity).slice(0, limit);
+  return (await allItems()).filter((r) => r.featured).sort(byPopularity).slice(0, limit);
 }
 
 export async function getByRarity(rarity: Rarity, limit = 8) {
-  await ensureDb();
-  const rows = await withRefsSelect().where(eq(items.rarity, rarity));
-  return (rows as ItemWithRefs[]).sort((a, b) => b.popularity - a.popularity).slice(0, limit);
+  return (await allItems()).filter((r) => r.rarity === rarity).sort(byPopularity).slice(0, limit);
 }
 
 export async function getNewArrivals(limit = 8) {
-  await ensureDb();
-  const rows = await withRefsSelect().where(eq(items.isNew, true));
-  return (rows as ItemWithRefs[])
+  return (await allItems())
+    .filter((r) => r.isNew)
     .sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt))
     .slice(0, limit);
 }
 
 export async function getMostExpensive(limit = 6) {
-  await ensureDb();
-  const rows = await withRefsSelect();
-  return (rows as ItemWithRefs[]).sort((a, b) => b.priceMinor - a.priceMinor).slice(0, limit);
+  return [...(await allItems())].sort((a, b) => b.priceMinor - a.priceMinor).slice(0, limit);
 }
 
 export async function getRelated(item: ItemWithRefs, limit = 4) {
+  return (await allItems())
+    .filter((r) => r.categorySlug === item.categorySlug && r.id !== item.id)
+    .slice(0, limit);
+}
+
+let refCache: { at: number; heroes: schema.Hero[]; categories: schema.Category[] } | null = null;
+
+async function getRefs() {
+  if (refCache && Date.now() - refCache.at < CATALOG_TTL_MS) return refCache;
   await ensureDb();
-  const rows = await withRefsSelect().where(
-    and(eq(categories.slug, item.categorySlug))
-  );
-  return (rows as ItemWithRefs[]).filter((r) => r.id !== item.id).slice(0, limit);
+  const [h, c] = await Promise.all([
+    db.select().from(heroes).orderBy(asc(heroes.name)),
+    db.select().from(categories).orderBy(asc(categories.name)),
+  ]);
+  refCache = { at: Date.now(), heroes: h, categories: c };
+  return refCache;
 }
 
 export async function getHeroes() {
-  await ensureDb();
-  return db.select().from(heroes).orderBy(asc(heroes.name));
+  return (await getRefs()).heroes;
 }
 
 export async function getCategories() {
-  await ensureDb();
-  return db.select().from(categories).orderBy(asc(categories.name));
+  return (await getRefs()).categories;
 }
 
 export async function getSlots(): Promise<string[]> {
-  await ensureDb();
-  const rows = await db
-    .selectDistinct({ slot: items.slot })
-    .from(items)
-    .where(sql`${items.slot} <> ''`);
-  return rows.map((r) => r.slot).sort();
+  const slots = new Set((await allItems()).map((r) => r.slot).filter(Boolean));
+  return [...slots].sort();
 }
 
 export async function getPosts() {
