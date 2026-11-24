@@ -1,6 +1,7 @@
 import "server-only";
 import { db, schema, ensureDb } from "./db";
-import { asc, desc, eq, inArray } from "drizzle-orm";
+import { asc, desc, eq, gte, lt, and, max } from "drizzle-orm";
+import { unstable_cache, revalidateTag } from "next/cache";
 import type { Rarity } from "./rarity";
 
 const { items, heroes, categories, posts, reviews } = schema;
@@ -61,12 +62,53 @@ function withRefsSelect() {
 }
 
 /**
- * The whole catalogue is read once per server instance and kept in memory for
- * CATALOG_TTL_MS. Every list (home, catalogue, deals, item pages) filters this
- * snapshot instead of pulling thousands of rows from Postgres on each request,
- * which is what exhausted the Neon data-transfer quota.
+ * Catalogue caching — keeps anonymous traffic off Postgres entirely so the
+ * database stays inside the Neon free-plan limits (compute scales to zero,
+ * network transfer stays tiny).
+ *
+ *   L2  Next/Vercel Data Cache (unstable_cache), shared by every instance,
+ *       revalidated every CATALOG_REVALIDATE_S or on demand via the "catalog"
+ *       tag (admin sync / import). Stored in id-range chunks because a cache
+ *       entry is capped at 2 MB and the full catalogue is ~3.5 MB.
+ *   L1  per-instance memory copy for MEMORY_TTL_MS, so hot pages do not even
+ *       touch the Data Cache.
+ *
+ * If Postgres is unreachable (quota, outage) the last good copy is served.
+ * Checkout/balance code paths (lib/orders, lib/auth) still read the database.
  */
-const CATALOG_TTL_MS = 5 * 60 * 1000;
+export const CATALOG_TAG = "catalog";
+const CATALOG_REVALIDATE_S = 24 * 60 * 60;
+const MEMORY_TTL_MS = 10 * 60 * 1000;
+const CHUNK = 1000;
+
+const cachedMaxItemId = unstable_cache(
+  async () => {
+    await ensureDb();
+    const [row] = await db.select({ m: max(items.id) }).from(items);
+    return row?.m ?? 0;
+  },
+  ["catalog-max-id-v1"],
+  { revalidate: CATALOG_REVALIDATE_S, tags: [CATALOG_TAG] }
+);
+
+const cachedChunk = unstable_cache(
+  async (index: number) => {
+    await ensureDb();
+    const from = index * CHUNK;
+    return withRefsSelect().where(and(gte(items.id, from), lt(items.id, from + CHUNK)));
+  },
+  ["catalog-chunk-v1"],
+  { revalidate: CATALOG_REVALIDATE_S, tags: [CATALOG_TAG] }
+);
+
+const cachedHeroAttrs = unstable_cache(
+  async () => {
+    await ensureDb();
+    return db.select({ id: heroes.id, attribute: heroes.attribute }).from(heroes);
+  },
+  ["catalog-hero-attrs-v1"],
+  { revalidate: CATALOG_REVALIDATE_S, tags: [CATALOG_TAG] }
+);
 
 interface Snapshot {
   at: number;
@@ -78,26 +120,31 @@ let snapshot: Snapshot | null = null;
 let inflight: Promise<Snapshot> | null = null;
 
 async function loadSnapshot(): Promise<Snapshot> {
-  await ensureDb();
-  const [rows, heroRows] = await Promise.all([
-    withRefsSelect(),
-    db.select({ id: heroes.id, attribute: heroes.attribute }).from(heroes),
+  const maxId = await cachedMaxItemId();
+  const chunkCount = Math.floor(maxId / CHUNK) + 1;
+  const [chunks, heroRows] = await Promise.all([
+    Promise.all(Array.from({ length: chunkCount }, (_, i) => cachedChunk(i))),
+    cachedHeroAttrs(),
   ]);
+  // The Data Cache stores JSON, so dates come back as strings.
+  const all = chunks.flat().map((r) => ({ ...r, createdAt: new Date(r.createdAt) })) as ItemWithRefs[];
   return {
     at: Date.now(),
-    items: rows as ItemWithRefs[],
+    items: all,
     heroAttr: new Map(heroRows.map((h) => [h.id, String(h.attribute)])),
   };
 }
 
 async function getSnapshot(): Promise<Snapshot> {
-  if (snapshot && Date.now() - snapshot.at < CATALOG_TTL_MS) return snapshot;
+  if (snapshot && Date.now() - snapshot.at < MEMORY_TTL_MS) return snapshot;
   if (!inflight) {
     inflight = loadSnapshot()
       .then((s) => (snapshot = s))
       .catch((e) => {
-        // Serve the last good copy rather than failing the page.
-        if (snapshot) return snapshot;
+        if (snapshot) {
+          console.error("[catalog] refresh failed, serving cached copy:", e);
+          return snapshot;
+        }
         throw e;
       })
       .finally(() => {
@@ -107,9 +154,11 @@ async function getSnapshot(): Promise<Snapshot> {
   return inflight;
 }
 
-/** Drop the cached catalogue (after imports or price syncs). */
+/** Drop every cached copy of the catalogue (after imports or price syncs). */
 export function invalidateCatalogCache() {
   snapshot = null;
+  refCache = null;
+  revalidateTag(CATALOG_TAG);
 }
 
 async function allItems(): Promise<ItemWithRefs[]> {
@@ -175,16 +224,24 @@ export async function getRelated(item: ItemWithRefs, limit = 4) {
     .slice(0, limit);
 }
 
+const cachedRefs = unstable_cache(
+  async () => {
+    await ensureDb();
+    const [h, c] = await Promise.all([
+      db.select().from(heroes).orderBy(asc(heroes.name)),
+      db.select().from(categories).orderBy(asc(categories.name)),
+    ]);
+    return { heroes: h, categories: c };
+  },
+  ["catalog-refs-v1"],
+  { revalidate: CATALOG_REVALIDATE_S, tags: [CATALOG_TAG] }
+);
+
 let refCache: { at: number; heroes: schema.Hero[]; categories: schema.Category[] } | null = null;
 
 async function getRefs() {
-  if (refCache && Date.now() - refCache.at < CATALOG_TTL_MS) return refCache;
-  await ensureDb();
-  const [h, c] = await Promise.all([
-    db.select().from(heroes).orderBy(asc(heroes.name)),
-    db.select().from(categories).orderBy(asc(categories.name)),
-  ]);
-  refCache = { at: Date.now(), heroes: h, categories: c };
+  if (refCache && Date.now() - refCache.at < MEMORY_TTL_MS) return refCache;
+  refCache = { at: Date.now(), ...(await cachedRefs()) };
   return refCache;
 }
 
@@ -201,25 +258,46 @@ export async function getSlots(): Promise<string[]> {
   return [...slots].sort();
 }
 
-export async function getPosts() {
-  await ensureDb();
-  return db.select().from(posts).orderBy(desc(posts.publishedAt));
+const cachedPosts = unstable_cache(
+  async () => {
+    await ensureDb();
+    const rows = await db.select().from(posts).orderBy(desc(posts.publishedAt));
+    return rows;
+  },
+  ["posts-v1"],
+  { revalidate: CATALOG_REVALIDATE_S, tags: [CATALOG_TAG] }
+);
+
+const cachedReviews = unstable_cache(
+  async () => {
+    await ensureDb();
+    return db.select().from(reviews);
+  },
+  ["reviews-v1"],
+  { revalidate: CATALOG_REVALIDATE_S, tags: [CATALOG_TAG] }
+);
+
+type Post = typeof posts.$inferSelect;
+
+function revivePost(p: Post): Post {
+  return { ...p, publishedAt: new Date(p.publishedAt as unknown as string) } as Post;
 }
 
-export async function getPostBySlug(slug: string) {
-  await ensureDb();
-  const rows = await db.select().from(posts).where(eq(posts.slug, slug)).limit(1);
-  return rows[0] ?? null;
+export async function getPosts(): Promise<Post[]> {
+  return (await cachedPosts()).map(revivePost);
+}
+
+export async function getPostBySlug(slug: string): Promise<Post | null> {
+  return (await getPosts()).find((p) => p.slug === slug) ?? null;
 }
 
 export async function getReviews() {
-  await ensureDb();
-  return db.select().from(reviews);
+  return cachedReviews();
 }
 
+/** Cart / wishlist display. Checkout re-reads prices from the database. */
 export async function getItemsByIds(ids: number[]): Promise<ItemWithRefs[]> {
   if (!ids.length) return [];
-  await ensureDb();
-  const rows = await withRefsSelect().where(inArray(items.id, ids));
-  return rows as ItemWithRefs[];
+  const wanted = new Set(ids);
+  return (await allItems()).filter((r) => wanted.has(r.id));
 }

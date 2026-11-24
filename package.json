@@ -2,7 +2,7 @@
   "name": "rust-skins",
   "version": "1.0.0",
   "private": true,
-  "description": "rust-skins.com — Rust skins store",
+  "description": "rust-skins.com \u2014 Rust skins store",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -12,7 +12,9 @@
     "db:migrate": "node --env-file=.env --import tsx lib/db/migrate.ts",
     "db:push": "node --env-file=.env node_modules/drizzle-kit/bin.cjs push",
     "db:seed": "node --env-file=.env --import tsx lib/db/seed.ts",
-    "catalog:import": "node --env-file=.env --import tsx scripts/import-rust-skins.ts"
+    "catalog:import": "node --env-file=.env --import tsx scripts/import-rust-skins.ts",
+    "db:dump": "bash scripts/db-dump.sh",
+    "db:restore": "bash scripts/db-restore.sh"
   },
   "dependencies": {
     "@electric-sql/pglite": "^0.5.5",
